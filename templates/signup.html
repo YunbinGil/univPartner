@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>회원가입</title>
+    <style>
+        .error { color: red; font-size: 0.9em; }
+        .success { color: green; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <h2>회원가입</h2>
+    <form method="POST" action="/signup" onsubmit="return validateForm()">
+        <label>아이디: <input type="text" name="loginID" id="loginID" required></label>
+        <button type="button" onclick="checkDuplicateID()">중복확인</button>
+        <br>
+        <span id="idMessage" class="error"></span>
+        <br>
+        <label>비밀번호: <input type="password" name="password" id="password" required></label>
+        <br>
+        <span id="passwordNote" class="error"></span>
+        <br>
+        <label>비밀번호 재입력: <input type="password" id="confirmPassword" required></label>
+        <br>
+        <span id="matchMessage" class="error"></span>
+        <br>
+        <button type="submit">가입하기</button>
+    </form>
+
+    <script>
+        let idCheckPassed = false;
+
+        function checkDuplicateID() {
+            const loginID = document.getElementById('loginID').value;
+            if(!loginID){
+                document.getElementById('idMessage').textContent = "아이디를 입력하세요";
+                return;
+            }
+            
+            fetch(`/check-id?loginID=${encodeURIComponent(loginID)}`)
+            .then(res => res.json())
+            .then(data => {
+                const msg = document.getElementById('idMessage');
+                if(data.exists){
+                    msg.textContent="이미 존재하는 아이디입니다";
+                    msg.className='error';
+                    idCheckPassed=false;
+                }else{
+                    msg.textContent="사용 가능한 아이디입니다";
+                    msg.className='success';
+                    idCheckPassed=true;
+                }
+            });
+        }
+
+        function validateForm(){
+            const pw = document.getElementById('password').value;
+            const cpw = document.getElementById('confirmPassword').value;
+            const matchMsg = document.getElementById('matchMessage');
+
+             if (!idCheckPassed) {
+                alert("아이디 중복확인을 먼저 해주세요");
+                return false;
+            }
+            if (pw.length < 6) {
+                document.getElementById('passwordNote').textContent = "비밀번호는 최소 6자 이상이어야 합니다";
+                return false;
+            } else {
+                document.getElementById('passwordNote').textContent = "";
+            }
+            if (pw !== cpw) {
+                matchMsg.textContent = "비밀번호가 일치하지 않습니다";
+                return false;
+            } else {
+                matchMsg.textContent = "";
+            }
+            return true;
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => { //Live Validation (Real-time form check)
+            const pw = document.getElementById('password');
+            const cpw = document.getElementById('confirmPassword');
+            const msg = document.getElementById('matchMessage');
+
+            function checkMatch() {
+                if (cpw.value.length === 0) {
+                    msg.textContent = "";
+                } else if (pw.value === cpw.value) {
+                msg.textContent = "비밀번호가 일치합니다";
+                msg.className = "success";
+                } else {
+                msg.textContent = "비밀번호가 일치하지 않습니다";
+                msg.className = "error";
+                }
+            }
+            pw.addEventListener('input', checkMatch);
+            cpw.addEventListener('input', checkMatch);
+        });
+    </script>
+</body>
+</html> 

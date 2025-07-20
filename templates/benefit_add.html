@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>혜택 정보 추가</title>
+    <style>
+        .error { color: red; font-size: 0.9em; }
+        .success { color: green; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <h2>혜택 정보 추가</h2>
+    <span id="scopeMessage" class="info"></span>
+    <br>
+    <form action="{{ url_for('main.add_benefit') }}" method="POST">
+        <label>기업명(가게명):</label><br>
+        <input type="text" name="store_name" required><br><br>
+
+        <label>카테고리:</label><br>
+        <input type="radio" name="category" value=1 required> 음식점
+        <input type="radio" name="category" value=2> 교육
+        <input type="radio" name="category" value=3> 건강
+        <input type="radio" name="category" value=4> 미용
+        <input type="radio" name="category" value=5> 호프
+        <input type="radio" name="category" value=6> 엔터
+        <input type="radio" name="category" value=7> 카페
+        <input type="radio" name="category" value=8> 의류
+        <input type="radio" name="category" value=9> 주거
+        <br><br>
+        
+        <label>혜택 형태:</label><br>
+        {% for btype in benefit_types %}
+            <input type="checkbox" name="type_ids" value="{{ btype['type_id'] }}"> {{ btype['kor'] }}
+        {% endfor %}
+        <br><br>
+
+        <label>위치 주소:</label><br>
+        <input type="text" name="address"><br><br>
+
+        <label>혜택 내용:</label><br>
+        <textarea name="content" required></textarea><br><br>
+
+        
+        
+
+        <label>시작일:</label><br>
+        <input type="date" name="start_date" required><br><br>
+
+        <label>종료일:</label><br>
+        <input type="date" name="end_date" required><br><br>
+
+        <button type="submit">추가하기</button>
+    </form>
+    <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        fetch('/fetch/editor-info')
+        .then(res => res.json())
+        .then(data => {
+            const msg = document.getElementById('scopeMessage');
+            
+            if (data.error) {
+                msg.textContent = '인증된 편집자만 사용 가능합니다.';
+                msg.className = 'error';
+                return;
+            }
+
+            const base = data.univ;
+            const college = data.college;
+            const major = data.major;
+            let fullScope = "";
+
+            switch (data.aff_council) {
+                case 'univ':
+                    fullScope = base;
+                    break;
+                case 'college':
+                    fullScope = `${base} ${college}`;
+                    break;
+                case 'major':
+                    fullScope = `${base} ${college} ${major}`;
+                    break;
+                default:
+                    fullScope = base;
+            }
+
+            msg.textContent = `혜택 적용 범위: ${fullScope}`;
+            msg.className = 'success';
+        });
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>회원가입 성공</title>
+    <style>
+
+    </style>
+</head>
+<body>
+    <h2>어서오삼 :3</h2>
+    <form method="POST" action="/signup-profile" onsubmit=return>
+        <label>닉네임: <input type="text" name="nickname" id="nickname" required></label> 
+        <button type="button" onclick="checkDuplicateNickName()">중복확인</button>
+        <br><span id="nicknameMessage" class="error"></span><br>
+        
+        <label>대학교: 
+            <select name="univ" id="univ" onchange="updateCollegeOptions()" required>
+                <option value="">대학교 선택</option>
+            </select>
+        </label><br>
+        <label>단과대학: 
+            <select name="college" id="college" onchange="updateMajorOptions()" required>
+                <option value="">단과대학 선택</option>
+            </select>
+        </label><br>
+        <label>학과: 
+            <select name="major" id="major" required>
+                <option value="">학과 선택</option>
+            </select>
+        </label><br><br>
+        <button type="submit">시작하기</button> <br>
+        <br><br><br>
+    </form>
+    <script>       
+        document.addEventListener("DOMContentLoaded", () => {
+            fetch('/api/univ-list')
+            .then(res => res.json())
+            .then(data => {
+                const univSelect = document.getElementById("univ");
+                data.forEach(univ => {
+                    const opt = document.createElement("option");
+                    opt.value = univ;
+                    opt.textContent = univ;
+                    univSelect.appendChild(opt);
+                });
+            });
+        });
+
+        function updateUnivOptions() {
+            const univ = document.getElementById("univ").value;
+
+            // 대학교 선택 안 되어있으면 초기화만 하고 리턴
+            if (!univ) {
+                document.getElementById("college").innerHTML = '<option value="">단과대 선택</option>';
+                document.getElementById("major").innerHTML = '<option value="">학과 선택</option>';
+                return;
+            }
+
+            fetch(`/api/college-list?univ=${encodeURIComponet(univ)}`)
+            .then(res => res.json())
+            .then(data => {
+                const collegeSelect = document.getElementById("college");
+                collegeSelect.innerHTML = '<option value=\"\">단과대학 선택</option>';
+                data.forEach(college => {
+                    const opt = document.createElement("option");
+                    opt.value = college;
+                    opt.textContent = college;
+                    collegeSelect.appendChild(opt);
+                });
+            });
+        }
+
+        function updateCollegeOptions() {
+            const univ = document.getElementById("univ").value;
+            fetch(`/api/college-list?univ=${encodeURIComponet(univ)}`)
+            .then(res => res.json())
+            .then(data => {
+                const collegeSelect = document.getElementById("college");
+                collegeSelect.innerHTML = '<option value=\"\">단과대학 선택</option>';
+                data.forEach(college => {
+                    const opt = document.createElement("option");
+                    opt.value = college;
+                    opt.textContent = college;
+                    collegeSelect.appendChild(opt);
+                });
+            });
+        }
+
+        function updateMajorOptions() {
+            const univ = document.getElementById("major").value;
+            fetch(`/api/major-list?univ=${encodeURIComponent(univ)}&college=${encodeURIComponent(college)}`)
+            .then(res => res.json())
+            .then(data => {
+                const majorSelect = document.getElementById("major");
+                majorSelect.innerHTML = '<option value=\"\">g학과 선택</option>';
+                data.forEach(major => {
+                    const opt = document.createElement("option");
+                    opt.value = major;
+                    opt.textContent = major;
+                    majorSelect.appendChild(opt);
+                });
+            });
+        }
+
+        let nicknameCheckPassed = false;
+        
+        function checkDuplicateNickName() {
+            const nickname = document.getElementById('nickname').value;
+            if(!nickname){
+                document.getElementById('nicknameMessage').textContent = "닉네임을 입력하세요";
+                return;
+            }
+            
+            fetch(`/check-nickname?nickname=${encodeURIComponent(nickname)}`)
+            .then(res => res.json())
+            .then(data => {
+                const msg = document.getElementById('nicknameMessage');
+                if(data.exists){
+                    msg.textContent="이미 존재하는 닉네임입니다";
+                    msg.className='error';
+                    nicknameCheckPassed=false;
+                }else{
+                    msg.textContent="사용 가능한 닉네임입니다";
+                    msg.className='success';
+                    nicknameCheckPassed=true;
+                }
+            });
+        }
+        
+    </script>
+</body>
+</html>
