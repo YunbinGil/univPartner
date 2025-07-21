@@ -1,16 +1,47 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <title>혜택 정보 추가</title>
     <style>
-        .error { color: red; font-size: 0.9em; }
-        .success { color: green; font-size: 0.9em; }
+        .error {
+            color: red;
+            font-size: 0.9em;
+        }
+
+        .success {
+            color: green;
+            font-size: 0.9em;
+        }
     </style>
 </head>
+
 <body>
     <h2>혜택 정보 추가</h2>
     <span id="scopeMessage" class="info"></span>
+
+    <div id="adminScopeBox" style="display: none;">
+        <h3>※ 관리자 전용 혜택 범위 지정</h3>
+        <label>대학교:
+            <select name="scope_univ" id="scope_univ" onchange="updateCollegeOptions()" required>
+                <option value="">대학교 선택</option>
+            </select>
+        </label><br>
+
+        <label>단과대학:
+            <select name="scope_college" id="scope_college" onchange="updateMajorOptions()" required>
+                <option value="">단과대학 선택</option>
+            </select>
+        </label><br>
+
+        <label>학과:
+            <select name="scope_major" id="scope_major" required>
+                <option value="">학과 선택</option>
+            </select>
+        </label><br><br>
+    </div>
+
     <br>
     <form action="{{ url_for('main.add_benefit') }}" method="POST">
         <label>기업명(가게명):</label><br>
@@ -27,10 +58,10 @@
         <input type="radio" name="category" value=8> 의류
         <input type="radio" name="category" value=9> 주거
         <br><br>
-        
+
         <label>혜택 형태:</label><br>
         {% for btype in benefit_types %}
-            <input type="checkbox" name="type_ids" value="{{ btype['type_id'] }}"> {{ btype['kor'] }}
+        <input type="checkbox" name="type_ids" value="{{ btype['type_id'] }}"> {{ btype['kor'] }}
         {% endfor %}
         <br><br>
 
@@ -40,8 +71,8 @@
         <label>혜택 내용:</label><br>
         <textarea name="content" required></textarea><br><br>
 
-        
-        
+
+
 
         <label>시작일:</label><br>
         <input type="date" name="start_date" required><br><br>
@@ -52,42 +83,40 @@
         <button type="submit">추가하기</button>
     </form>
     <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        fetch('/fetch/editor-info')
-        .then(res => res.json())
-        .then(data => {
-            const msg = document.getElementById('scopeMessage');
-            
-            if (data.error) {
-                msg.textContent = '인증된 편집자만 사용 가능합니다.';
-                msg.className = 'error';
-                return;
-            }
+        document.addEventListener("DOMContentLoaded", () => {
+            fetch('/fetch/editor-info')
+                .then(res => res.json())
+                .then(data => {
+                    const msg = document.getElementById('scopeMessage');
+                    const adminBox = document.getElementById('adminScopeBox');
 
-            const base = data.univ;
-            const college = data.college;
-            const major = data.major;
-            let fullScope = "";
+                    if (data.error) {
+                        msg.textContent = '인증된 편집자 또는 관리자만 사용 가능합니다.';
+                        msg.className = 'error';
+                        return;
+                    }
 
-            switch (data.aff_council) {
-                case 'univ':
-                    fullScope = base;
-                    break;
-                case 'college':
-                    fullScope = `${base} ${college}`;
-                    break;
-                case 'major':
-                    fullScope = `${base} ${college} ${major}`;
-                    break;
-                default:
-                    fullScope = base;
-            }
+                    if (data.role === 'admin') {
+                        msg.textContent = '관리자 모드 - 범위를 수동 지정하세요.';
+                        msg.className = 'success';
+                        adminBox.style.display = 'block';
+                        loadUnivList(); // 셀렉트박스 초기화
+                    } else {
 
-            msg.textContent = `혜택 적용 범위: ${fullScope}`;
-            msg.className = 'success';
+                        // 승인된 편집자
+                        const { univ, college, major, aff_council } = data;
+                        let fullScope = univ;
+                        if (aff_council === 'college') fullScope = `${univ} ${college}`;
+                        else if (aff_council === 'major') fullScope = `${univ} ${college} ${major}`;
+                        msg.textContent = `혜택 적용 범위: ${fullScope}`;
+                        msg.className = 'success';
+                    }
+                });
         });
-    });
-</script>
+
+    </script>
+    <script src="{{ url_for('static', filename='js/school_select.js') }}"></script>
 
 </body>
+
 </html>

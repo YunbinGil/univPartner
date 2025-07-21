@@ -219,15 +219,28 @@ def fetch_editor_info():
         return jsonify({'error': '로그인 필요'}), 401
     
     user_id = session['user_id']
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM editors WHERE submitted_by = %s", (user_id,))
-    editor = cur.fetchone()
-    cur.close()
 
-    if editor:
-        return jsonify(editor)
-    else:
-        return jsonify({'error': '편집자 아님'}), 403
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
+    user  = cur.fetchone()
+
+    if not user:
+        cur.close()
+        return jsonify({'error': '유저 정보 없음'}), 403
+
+    if user['role'] == 'admin':
+        cur.close()
+        return jsonify({'role': 'admin'})
+
+    if user['role'] == 'editor':
+        cur.execute("SELECT * FROM editors WHERE submitted_by = %s AND status = 'approved'", (user_id,))
+        editor = cur.fetchone()
+        cur.close()
+
+        if editor:
+            return jsonify(editor)
+
+    return jsonify({'error': '편집자 승인 필요'}), 403
 
 @main.route('/benefit/add', methods=['GET','POST'])
 def add_benefit():
@@ -235,7 +248,10 @@ def add_benefit():
         return redirect(url_for('main.login'))
 
     user_id = session['user_id']
-    
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
+    user = cur.fetchone()
+
     if request.method == 'POST':
         store_name = request.form.get('store_name')
         address = request.form.get('address')
@@ -246,17 +262,38 @@ def add_benefit():
         end_date = request.form.get('end_date')
 
         cur = mysql.connection.cursor()
+        cur.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
+        user = cur.fetchone()
         
-        # 🧠 editor_id 가져오기
-        cur.execute("SELECT * FROM editors WHERE submitted_by = %s AND status = 'approved'", (user_id,))
-        editor = cur.fetchone()
-        if not editor:
+        editor_id=None
+        scope = None
+
+        if user['role'] == 'editor':
+            # 🧠 editor_id 가져오기
+            cur.execute("SELECT * FROM editors WHERE submitted_by = %s AND status = 'approved'", (user_id,))
+            editor = cur.fetchone()
+            if not editor:
+                cur.close()
+                return "❌ 편집자 승인 상태가 아닙니다."
+            editor_id = editor['editor_id']
+            scope = editor['aff_council']
+        elif user['role'] == 'admin':
+            univ = request.form.get('scope_univ')
+            college = request.form.get('scope_college')
+            major = request.form.get('scope_major')
+
+            if not univ:
+                return "❌ 범위 지정 오류: 대학교는 필수입니다."
+
+            scope = univ
+            if college:
+                scope += f" {college}"
+            if major:
+                scope += f" {major}"
+        else:
             cur.close()
-            return "편집자로 승인된 사용자만 혜택을 등록할 수 있습니다."
-
-        editor_id = editor['editor_id']
-        scope = editor['aff_council']
-
+            return "❌ 권한 없음: 편집자 또는 관리자만 등록 가능"
+        
         try:
             # ✅ 1. partners 테이블에 insert
             cur.execute("""
@@ -289,10 +326,10 @@ def add_benefit():
     # GET 요청 시: BenefitTypes 불러와서 템플릿에 넘기기
 
     type_name_kor = {
-    'discount': '할인',
-    'event': '이벤트',
-    'freshman': '새내기 혜택',
-    'offer': '제공'
+        'discount': '할인',
+        'event': '이벤트',
+        'freshman': '새내기 혜택',
+        'offer': '제공'
     }
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM BenefitTypes")

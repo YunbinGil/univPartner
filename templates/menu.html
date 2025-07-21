@@ -9,6 +9,23 @@
     <br><br><br><br><br>
     <label>편집자 전용</label>
     <a href="/benefit/add"><button type="button">혜택 정보 추가하기</button></a>
-    <a href="/benefit/edit"><button type="button">혜택 정보 수정하기</button></a>  
+    <a href="/benefit/edit"><button type="button">혜택 정보 수정하기</button></a>
+    
+    <script>
+        function checkAndGoToAdd() {
+        fetch('/fetch/user-info')
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert("접근 권한이 없습니다. 관리자 또는 승인된 편집자만 이용할 수 있습니다.");
+                } else {
+                    window.location.href = "/add-benefit";
+                }
+            })
+            .catch(() => {
+                alert("서버 오류. 다시 시도해 주세요.");
+            });
+    }   
+    </script>
 </body>
 </html>
