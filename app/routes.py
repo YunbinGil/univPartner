@@ -248,6 +248,8 @@ def add_benefit():
         return redirect(url_for('main.login'))
 
     user_id = session['user_id']
+    #fetch_and_update_departments() #api연결후
+
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
     user = cur.fetchone()
@@ -265,7 +267,6 @@ def add_benefit():
         cur.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
         user = cur.fetchone()
         
-        editor_id=None
         scope = None
 
         if user['role'] == 'editor':
@@ -277,6 +278,7 @@ def add_benefit():
                 return "❌ 편집자 승인 상태가 아닙니다."
             editor_id = editor['editor_id']
             scope = editor['aff_council']
+
         elif user['role'] == 'admin':
             univ = request.form.get('scope_univ')
             college = request.form.get('scope_college')
@@ -298,9 +300,9 @@ def add_benefit():
             # ✅ 1. partners 테이블에 insert
             cur.execute("""
                 INSERT INTO partners 
-                (name, address, content, scope, start_date, end_date, category_id, created_by_editor_id)
+                (name, address, content, scope, start_date, end_date, category_id, created_by_user_id)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (store_name, address, content, scope, start_date, end_date, category_id, editor_id))
+            """, (store_name, address, content, scope, start_date, end_date, category_id, user_id))
             mysql.connection.commit()
 
             partner_id = cur.lastrowid
