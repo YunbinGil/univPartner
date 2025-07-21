@@ -276,8 +276,13 @@ def add_benefit():
             if not editor:
                 cur.close()
                 return "❌ 편집자 승인 상태가 아닙니다."
-            editor_id = editor['editor_id']
+            # editor_id = editor['editor_id']
             scope = editor['aff_council']
+            scopeStr = editor['univ']
+            if(scope == 'college'):
+                scopeStr += f" { editor['college']}" 
+            if(scope == 'major'):
+                scopeStr += f" { editor['college']} {editor['major']}" 
 
         elif user['role'] == 'admin':
             univ = request.form.get('scope_univ')
@@ -287,22 +292,23 @@ def add_benefit():
             if not univ:
                 return "❌ 범위 지정 오류: 대학교는 필수입니다."
 
-            scope = univ
+            scopeStr = univ
             if college:
-                scope += f" {college}"
+                scopeStr += f" {college}"
             if major:
-                scope += f" {major}"
+                scopeStr += f" {college} {major}"
         else:
             cur.close()
             return "❌ 권한 없음: 편집자 또는 관리자만 등록 가능"
         
+
         try:
             # ✅ 1. partners 테이블에 insert
             cur.execute("""
                 INSERT INTO partners 
                 (name, address, content, scope, start_date, end_date, category_id, created_by_user_id)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (store_name, address, content, scope, start_date, end_date, category_id, user_id))
+            """, (store_name, address, content, scopeStr, start_date, end_date, category_id, user_id))
             mysql.connection.commit()
 
             partner_id = cur.lastrowid
