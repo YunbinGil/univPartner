@@ -61,7 +61,7 @@
 
         <label>혜택 형태:</label><br>
         {% for btype in benefit_types %}
-        <input type="checkbox" name="type_ids" value="{{ btype['type_id'] }}"> {{ btype['kor'] }}
+        <input type="checkbox" name="type_ids" value="{{ btype['type_id'] }}"> {{ btype['name'] }}
         {% endfor %}
         <br><br>
 

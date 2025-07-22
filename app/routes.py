@@ -343,12 +343,6 @@ def add_benefit():
     cur.execute("SELECT * FROM BenefitTypes")
     benefit_types = cur.fetchall()
     
-    # 각 type에 한글 필드 추가
-    for btype in benefit_types:
-        eng_name = btype['name']
-        btype['kor'] = type_name_kor.get(eng_name, eng_name)  # fallback: 영어 그대로
-    cur.close()
-
     return render_template('benefit_add.html', benefit_types=benefit_types)
 
 @main.route('/benefit/edit_success', methods=['GET','POST'])
