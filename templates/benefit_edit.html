@@ -15,9 +15,12 @@
             font-size: 0.9em;
         }
     </style>
+    <script src="{{ url_for('static', filename='js/formatX.js') }}"></script>
 </head>
 
 <body>
+    <a href="/menu"><button type="button">메뉴</button></a>
+    
     <h2>혜택 정보 수정</h2>
     <span id="scopeMessage" class="info"></span>
 
@@ -99,9 +102,9 @@
                                         <h4>${p.name}</h4>
                                         <p><strong>내용:</strong> ${p.content.length > 50 ? p.content.slice(0, 50) + '...' : p.content}</p>
                                         <p><strong>범위:</strong> ${p.scope}</p>
-                                        <p><strong>카테고리 ID:</strong> ${p.category_name || '없음'}</p>
+                                        <p><strong>카테고리:</strong> ${p.category_name || '없음'}</p>
                                         <p><strong>혜택 형태:</strong> ${p.benefit_types || '없음'}</p>
-                                        <p><strong>기간:</strong> ${p.start_date} ~ ${p.end_date}</p>
+                                        <p><strong>기간:</strong> ${formatDate(p.start_date)} ~ ${formatDate(p.end_date)}</p>
                                         <button onclick="GoPartnerEditPage(${p.partner_id})">수정하기</button>
                                     `;
                                     partnerBox.appendChild(div);
@@ -115,6 +118,7 @@
             window.location.href = "/benefit/edit/" + partnerId;
         }
     </script>
-</body>
+
+    </body>
 
 </html>

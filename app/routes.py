@@ -354,7 +354,6 @@ def edit_benefit():
     return render_template('benefit_edit.html')
 
 @main.route('/fetch/partners-by-scope', methods=['GET'])
-@main.route('/fetch/partners-by-scope', methods=['GET'])
 def fetch_partners_by_scope():
     if 'user_id' not in session:
         return jsonify({'error': '로그인 필요'}), 401
