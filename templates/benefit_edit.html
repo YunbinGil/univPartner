@@ -105,7 +105,7 @@
                                         <p><strong>카테고리:</strong> ${p.category_name || '없음'}</p>
                                         <p><strong>혜택 형태:</strong> ${p.benefit_types || '없음'}</p>
                                         <p><strong>기간:</strong> ${formatDate(p.start_date)} ~ ${formatDate(p.end_date)}</p>
-                                        <button onclick="GoPartnerEditPage(${p.partner_id})">수정하기</button>
+                                        <button onclick='GoPartnerEditPage(${JSON.stringify(p).replace(/'/g, "\\'")})'>수정하기</button>
                                     `;
                                     partnerBox.appendChild(div);
                                 });
@@ -114,9 +114,10 @@
                 });
         });
 
-        function GoPartnerEditPage(partnerId) {
-            window.location.href = "/benefit/edit/" + partnerId;
-        }
+        function GoPartnerEditPage(partner) {
+            sessionStorage.setItem('editingPartner', JSON.stringify(partner));
+    window.location.href = "/benefit/edit/form";
+        }       
     </script>
 
     </body>

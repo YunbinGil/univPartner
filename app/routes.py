@@ -386,10 +386,12 @@ def fetch_partners_by_scope():
             SELECT 
                 p.partner_id,
                 p.name,
+                p.address,
                 p.content,
                 p.scope,
                 p.start_date,
                 p.end_date,
+                p.category_id,
                 bc.name AS category_name,
                 GROUP_CONCAT(bt.name SEPARATOR ', ') AS benefit_types
             FROM partners p
@@ -408,6 +410,52 @@ def fetch_partners_by_scope():
 
     cur.close()
     return jsonify({'error': '접근 권한 없음'}), 403
+
+@main.route('/benefit/edit/form')
+def benefit_edit_form():
+    return render_template('benefit_edit_form.html')
+
+@main.route('/benefit/update', methods=['POST'])
+def update_benefit():
+    partner_id = request.form.get('partner_id')
+    store_name = request.form.get('store_name')
+    address = request.form.get('address')
+    content = request.form.get('content')
+    start_date = request.form.get('start_date')
+    end_date = request.form.get('end_date')
+    category_id = request.form.get('category')
+    type_ids = request.form.getlist('type_ids')
+
+    if not partner_id:
+        return "❌ 혜택 ID 없음", 400
+
+    try:
+        cur = mysql.connection.cursor()
+
+        # ✅ partners 테이블 업데이트
+        cur.execute("""
+            UPDATE partners
+            SET name = %s, address = %s, content = %s,
+                start_date = %s, end_date = %s, category_id = %s
+            WHERE partner_id = %s
+        """, (store_name, address, content, start_date, end_date, category_id, partner_id))
+
+        # ✅ 연결 테이블 싹 지우고 다시 넣기
+        cur.execute("DELETE FROM PartnerBenefitTypes WHERE partner_id = %s", (partner_id,))
+        for type_id in type_ids:
+            cur.execute("""
+                INSERT INTO PartnerBenefitTypes (partner_id, type_id)
+                VALUES (%s, %s)
+            """, (partner_id, type_id))
+
+        mysql.connection.commit()
+        cur.close()
+        return redirect(url_for('main.benefit_edit_success'))
+
+    except Exception as e:
+        print("❌ 수정 실패:", e)
+        mysql.connection.rollback()
+        return "서버 오류 발생", 500
 
 
 @main.route('/map', methods=['GET','POST'])

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>title</title>
+    <script src="{{ url_for('static', filename='js/format.js') }}"></script>
+</head>
+
+<body>
+    <a href="/benefit/edit"><button type="button">뒤로 (목록으로 돌아가기) </button></a>
+    <br>
+
+    <h2> 혜택 정보 수정 </h2>
+
+    <form action="{{ url_for('main.update_benefit') }}" method="POST" onsubmit="handleSubmit()">
+    <input type="hidden" name="partner_id" id="partner_id">
+
+    <label>기업명(가게명):</label><br>
+    <input type="text" id="store_name" name="store_name" required><br><br>
+
+    <label>카테고리:</label><br>
+    <input type="radio" name="category" value=1 id="cat1" required> 음식점
+    <input type="radio" name="category" value=2 id="cat2"> 교육
+    <input type="radio" name="category" value=3 id="cat3"> 건강
+    <input type="radio" name="category" value=4 id="cat4"> 미용
+    <input type="radio" name="category" value=5 id="cat5"> 호프
+    <input type="radio" name="category" value=6 id="cat6"> 엔터
+    <input type="radio" name="category" value=7 id="cat7"> 카페
+    <input type="radio" name="category" value=8 id="cat8"> 의류
+    <input type="radio" name="category" value=9 id="cat9"> 주거
+    <br><br>
+
+    {% for btype in benefit_types %}
+    <input type="checkbox" name="type_ids" value="{{ btype.type_id }}" data-name="{{ btype.name }}"> {{ btype.name }}
+    {% endfor %}
+
+    <label>위치 주소:</label><br>
+    <input type="text" id="address" name="address"><br><br>
+
+    <label>혜택 내용:</label><br>
+    <textarea id="content" name="content" required></textarea><br><br>
+
+    <label>시작일:</label><br>
+    <input type="date" id="start_date" name="start_date" required><br><br>
+
+    <label>종료일:</label><br>
+    <input type="date" id="end_date" name="end_date" required><br><br>
+
+    <button type="submit" onclick="sessionStorage.removeItem('editingPartner')">수정완료</button>
+
+    </form>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const partnerData = sessionStorage.getItem('editingPartner');
+            if (!partnerData) {
+                alert("수정할 혜택 정보가 없습니다.");
+                return;
+            }
+
+            const partner = JSON.parse(partnerData);
+            document.getElementById('partner_id').value = partner.partner_id;
+
+            // ✅ input에 값 채우기 예시
+            document.getElementById('store_name').value = partner.name;
+            document.getElementById('address').value = partner.address;
+            document.getElementById('content').value = partner.content;
+
+            // ✅ 날짜도 예쁘게
+            document.getElementById('start_date').value = formatDate(partner.start_date);
+            document.getElementById('end_date').value = formatDate(partner.end_date);
+
+            // ✅ 혜택 형태 체크박스도 체크해주기
+            const benefitTypes = (partner.benefit_types || '').split(', ');
+            benefitTypes.forEach(type => {
+                const checkbox = [...document.querySelectorAll('input[name="type_ids"]')]
+                    .find(cb => cb.dataset.name === type);
+                if (checkbox) checkbox.checked = true;
+            });
+
+            // ✅ 카테고리 반영
+            const categoryRadio = document.querySelector(`input[name="category"][value="${partner.category_id}"]`);
+            if (categoryRadio) categoryRadio.checked = true;
+
+        });
+    </script>
+
+</body>
+
+</html>
