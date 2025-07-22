@@ -20,7 +20,7 @@
 
 <body>
     <a href="/menu"><button type="button">메뉴</button></a>
-    
+
     <h2>혜택 정보 수정</h2>
     <span id="scopeMessage" class="info"></span>
 
@@ -115,11 +115,14 @@
         });
 
         function GoPartnerEditPage(partner) {
+            const confirmed = window.confirm(`"${partner.name}"와/과의 제휴정보를 수정하시겠습니까?`);
+            if (!confirmed) return;
+
             sessionStorage.setItem('editingPartner', JSON.stringify(partner));
-    window.location.href = "/benefit/edit/form";
+            window.location.href = "/benefit/edit/form";
         }       
     </script>
 
-    </body>
+</body>
 
 </html>
