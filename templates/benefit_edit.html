@@ -1,10 +1,120 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8" />
     <title>edit_benefit</title>
+    <style>
+        .error {
+            color: red;
+            font-size: 0.9em;
+        }
+
+        .success {
+            color: green;
+            font-size: 0.9em;
+        }
+    </style>
 </head>
+
 <body>
-    
+    <h2>혜택 정보 수정</h2>
+    <span id="scopeMessage" class="info"></span>
+
+    <div id="adminScopeBox" style="display: none;">
+        <h3>※ 관리자 전용 혜택 범위 지정</h3>
+        <label>대학교:
+            <select name="scope_univ" id="scope_univ" onchange="updateCollegeOptions()" required>
+                <option value="">대학교 선택</option>
+            </select>
+        </label><br>
+
+        <label>단과대학:
+            <select name="scope_college" id="scope_college" onchange="updateMajorOptions()" required>
+                <option value="">단과대학 선택</option>
+            </select>
+        </label><br>
+
+        <label>학과:
+            <select name="scope_major" id="scope_major" required>
+                <option value="">학과 선택</option>
+            </select>
+        </label><br><br>
+    </div>
+    <br>
+
+    <div id="benefitBox" style="display: grid;">
+        <div id="partnerBox" style="display: flex; flex-direction: column; gap: 1rem;">
+            <br>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            fetch('/fetch/editor-info')
+                .then(res => res.json())
+                .then(data => {
+                    const msg = document.getElementById('scopeMessage');
+                    const adminBox = document.getElementById('adminScopeBox');
+                    const partnerBox = document.getElementById('partnerBox');
+
+                    if (data.error) {
+                        msg.textContent = '인증된 편집자 또는 관리자만 사용 가능합니다.';
+                        msg.className = 'error';
+                        return;
+                    }
+
+                    if (data.role === 'admin') {
+                        msg.textContent = '관리자 모드 - 범위를 수동 지정하세요.';
+                        msg.className = 'success';
+                        adminBox.style.display = 'block';
+                        loadUnivList(); // 셀렉트박스 초기화
+                    } else {
+                        // 승인된 편집자
+                        const { univ, college, major, aff_council } = data;
+                        let fullScope = univ;
+                        if (aff_council === 'college') fullScope = `${univ} ${college}`;
+                        else if (aff_council === 'major') fullScope = `${univ} ${college} ${major}`;
+                        msg.textContent = `혜택 적용 범위: ${fullScope}`;
+                        msg.className = 'success';
+
+                        fetch('/fetch/partners-by-scope')
+                            .then(res => res.json())
+                            .then(partners => {
+                                const partnerBox = document.getElementById('partnerBox');
+                                partnerBox.innerHTML = ''; // 기존 내용 초기화
+
+                                if (partners.length === 0) {
+                                    partnerBox.innerHTML = '<p>등록된 혜택이 없습니다.</p>';
+                                    return;
+                                }
+
+                                partners.forEach(p => {
+                                    const div = document.createElement('div');
+                                    div.className = 'partner-entry';
+                                    div.style.border = '1px solid #ccc';
+                                    div.style.padding = '10px';
+
+                                    div.innerHTML = `
+                                        <h4>${p.name}</h4>
+                                        <p><strong>내용:</strong> ${p.content.length > 50 ? p.content.slice(0, 50) + '...' : p.content}</p>
+                                        <p><strong>범위:</strong> ${p.scope}</p>
+                                        <p><strong>카테고리 ID:</strong> ${p.category_name || '없음'}</p>
+                                        <p><strong>혜택 형태:</strong> ${p.benefit_types || '없음'}</p>
+                                        <p><strong>기간:</strong> ${p.start_date} ~ ${p.end_date}</p>
+                                        <button onclick="GoPartnerEditPage(${p.partner_id})">수정하기</button>
+                                    `;
+                                    partnerBox.appendChild(div);
+                                });
+                            });
+                    }
+                });
+        });
+
+        function GoPartnerEditPage(partnerId) {
+            window.location.href = "/benefit/edit/" + partnerId;
+        }
+    </script>
 </body>
+
 </html>

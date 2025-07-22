@@ -4,7 +4,7 @@ from flask_mysqldb import MySQL
 mysql = MySQL()
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder='static')
     
      # DB 연결 설정
     app.config['MYSQL_HOST'] = 'localhost'

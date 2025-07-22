@@ -62,7 +62,7 @@ def signup_profile():
         mysql.connection.commit()
         cur.close()
 
-        return redirect(url_for('main.home', loginID=loginID))  # loginID 전달해도 되고 안 해도 됨
+        return redirect(url_for('main.home')) 
     print("🔄 학과 테이블 업데이트 점검 중...")
     fetch_and_update_departments()
     return render_template('signup_profile.html')
@@ -358,6 +358,64 @@ def benefit_edit_success():
 @main.route('/benefit/edit', methods=['GET','POST'])
 def edit_benefit():
     return render_template('benefit_edit.html')
+
+@main.route('/fetch/partners-by-scope', methods=['GET'])
+@main.route('/fetch/partners-by-scope', methods=['GET'])
+def fetch_partners_by_scope():
+    if 'user_id' not in session:
+        return jsonify({'error': '로그인 필요'}), 401
+
+    user_id = session['user_id']
+    cur = mysql.connection.cursor()
+
+    cur.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
+    user = cur.fetchone()
+    if not user:
+        cur.close()
+        return jsonify({'error': '유저 없음'}), 403
+
+    if user['role'] == 'editor':
+        cur.execute("SELECT * FROM editors WHERE submitted_by = %s AND status = 'approved'", (user_id,))
+        editor = cur.fetchone()
+        if not editor:
+            cur.close()
+            return jsonify({'error': '편집자 인증 필요'}), 403
+
+        # ✅ fullScope 만들기
+        full_scope = editor['univ']
+        if editor['aff_council'] == 'college':
+            full_scope += f" {editor['college']}"
+        elif editor['aff_council'] == 'major':
+            full_scope += f" {editor['college']} {editor['major']}"
+
+        # ✅ JOIN 쿼리로 모든 필요한 정보 가져오기
+        query = """
+            SELECT 
+                p.partner_id,
+                p.name,
+                p.content,
+                p.scope,
+                p.start_date,
+                p.end_date,
+                bc.name AS category_name,
+                GROUP_CONCAT(bt.name SEPARATOR ', ') AS benefit_types
+            FROM partners p
+            LEFT JOIN BenefitCategories bc ON p.category_id = bc.category_id
+            LEFT JOIN PartnerBenefitTypes pbt ON p.partner_id = pbt.partner_id
+            LEFT JOIN BenefitTypes bt ON pbt.type_id = bt.type_id
+            WHERE p.scope = %s
+            GROUP BY p.partner_id
+            ORDER BY p.start_date DESC
+        """
+        cur.execute(query, (full_scope,))
+        partners = cur.fetchall()
+        cur.close()
+
+        return jsonify(partners)
+
+    cur.close()
+    return jsonify({'error': '접근 권한 없음'}), 403
+
 
 @main.route('/map', methods=['GET','POST'])
 def map():
