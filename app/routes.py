@@ -489,19 +489,22 @@ def get_benefit_types():
 @main.route('/search', methods=['GET', 'POST'])
 def search():
     if request.method == 'POST':
+        import json
         keyword = request.form.get('keyword', '').strip()
         target = request.form.get('target')  # name or content
-        scope = request.form.get('scope')
+        scopes = request.form.get('scopes')
         category = request.form.get('category')
         type_ids_str = request.form.get('type_ids')  # JSON string
 
-        type_ids = []
-        if type_ids_str:
-            import json
-            try:
-                type_ids = json.loads(type_ids_str)
-            except:
-                type_ids = []
+        try:
+            type_ids = json.loads(type_ids_str) if type_ids_str else []
+        except:
+            type_ids = []
+
+        try:
+            scopes = json.loads(scopes_str) if scopes_str else []
+        except:
+            scopes = []
 
         # ✅ 쿼리 만들기
         query = """
@@ -517,10 +520,10 @@ def search():
         """
         params = []
 
-        if scope:
-            query += " AND p.scope = %s"
-            params.append(scope)
-
+        if scopes:
+            query += " AND p.scope IN %s"
+            params.append(tuple(scopes))
+            
         if category:
             query += " AND bc.name = %s"
             params.append(category)

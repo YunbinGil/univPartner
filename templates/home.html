@@ -104,7 +104,7 @@
             <div class="modal-header">상세조건 설정</div>
 
             <div class="filter-group">
-                <span>제휴 범위 (1개 선택)</span><br>
+                <span>제휴 범위 (복수 선택 가능)</span><span id="scope-count">(0/3)</span><br>
                 <div id="scope-buttons"></div>
             </div>
 
@@ -129,7 +129,7 @@
 
         let selectedTypes = new Set();
         let selectedCategory = null;
-        let selectedScope = "";
+        let selectedScope = new Set();
 
         const benefitTypeMap = {};
         fetch('/benefit/types')
@@ -165,9 +165,14 @@
                 btn.className = "toggle-btn";
                 btn.textContent = option;
                 btn.onclick = () => {
-                    selectedScope = option;
-                    [...container.children].forEach(b => b.classList.remove("active"));
-                    btn.classList.add("active");
+                    if (selectedScope.has(option)) {
+                        selectedScope.delete(option);
+                        btn.classList.remove("active");
+                    } else {
+                        selectedScope.add(option);
+                        btn.classList.add("active");
+                    }
+                    document.getElementById('scope-count').textContent = `(${selectedScope.size}/3)`;
                 };
                 container.appendChild(btn);
             });
@@ -231,7 +236,7 @@
 
         function applyFilters() {
             const typeIds = [...selectedTypes].map(name => benefitTypeMap[name]);
-            sessionStorage.setItem('selectedScope', selectedScope);
+            sessionStorage.setItem('selectedScopes', JSON.stringify([...selectedScopes]));
             sessionStorage.setItem('selectedTypes', JSON.stringify([...selectedTypes]));
             sessionStorage.setItem('selectedCategory', selectedCategory);
 
@@ -251,7 +256,7 @@
             const keyword = document.getElementById('searchInput').value.trim();
             const searchTarget = document.getElementById('searchTarget').value;
             // 조건 저장
-            const scope = sessionStorage.getItem('selectedScope');
+            const scopes = sessionStorage.getItem('selectedScopes');
             const typeIds = sessionStorage.getItem('selectedTypeIds');
             const category = sessionStorage.getItem('selectedCategory');
 
@@ -270,7 +275,7 @@
 
             if (keyword) appendField('keyword', keyword);
             if (searchTarget) appendField('target', searchTarget);
-            if (scope) appendField('scope', scope);
+            if (scopes) appendField('scopes', scopes);
             if (typeIds) appendField('type_ids', typeIds);
             if (category) appendField('category', category);
 
