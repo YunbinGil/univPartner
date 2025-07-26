@@ -486,67 +486,77 @@ def get_benefit_types():
     cur.close()
     return jsonify(types)
 
-@main.route('/search', methods=['GET', 'POST'])
+@main.route('/search-results', methods=['POST'])
+def search_results():
+    import json
+    keyword = request.form.get('keyword', '').strip()
+    target = request.form.get('target')  # name or content
+    scopes_str = request.form.get('scopes')
+    category = request.form.get('category')
+    type_ids_str = request.form.get('type_ids')  # JSON string
+
+    try:
+        type_ids = json.loads(type_ids_str) if type_ids_str else []
+    except:
+        type_ids = []
+
+    try:
+        scopes = json.loads(scopes_str) if scopes_str else []
+    except:
+        scopes = []
+
+    # ✅ 쿼리 만들기
+    query = """
+        SELECT 
+            p.*, 
+            bc.name AS category_name,
+            GROUP_CONCAT(bt.name SEPARATOR ', ') AS benefit_types
+        FROM partners p
+        LEFT JOIN BenefitCategories bc ON p.category_id = bc.category_id
+        LEFT JOIN PartnerBenefitTypes pbt ON p.partner_id = pbt.partner_id
+        LEFT JOIN BenefitTypes bt ON pbt.type_id = bt.type_id
+        WHERE 1=1
+    """
+    params = []
+
+    if scopes:
+        placeholders = ', '.join(['%s'] * len(scopes))
+        query += f" AND p.scope IN ({placeholders})"
+        params.extend(scopes)
+
+    if category:
+        query += " AND bc.name = %s"
+        params.append(category)
+
+    if type_ids:
+        placeholders = ', '.join(['%s'] * len(type_ids))
+        query += f""" AND p.partner_id IN (
+            SELECT partner_id 
+            FROM PartnerBenefitTypes 
+            WHERE type_id IN ({placeholders})
+        )"""
+        params.extend(type_ids)
+
+    if keyword and target in ('name', 'content'):
+        query += f" AND p.{target} LIKE %s"
+        params.append(f"%{keyword}%")
+
+    query += " GROUP BY p.partner_id ORDER BY p.start_date DESC"
+
+    print("🔍 최종 쿼리:", query)
+    print("🔍 파라미터:", params)
+    
+    cur = mysql.connection.cursor()
+    cur.execute(query, params)
+    results = cur.fetchall()
+    cur.close()
+        
+    return jsonify(results)
+
+@main.route('/search', methods=['GET','POST'])
 def search():
-    if request.method == 'POST':
-        import json
-        keyword = request.form.get('keyword', '').strip()
-        target = request.form.get('target')  # name or content
-        scopes = request.form.get('scopes')
-        category = request.form.get('category')
-        type_ids_str = request.form.get('type_ids')  # JSON string
-
-        try:
-            type_ids = json.loads(type_ids_str) if type_ids_str else []
-        except:
-            type_ids = []
-
-        try:
-            scopes = json.loads(scopes_str) if scopes_str else []
-        except:
-            scopes = []
-
-        # ✅ 쿼리 만들기
-        query = """
-            SELECT 
-                p.*, 
-                bc.name AS category_name,
-                GROUP_CONCAT(bt.name SEPARATOR ', ') AS benefit_types
-            FROM partners p
-            LEFT JOIN BenefitCategories bc ON p.category_id = bc.category_id
-            LEFT JOIN PartnerBenefitTypes pbt ON p.partner_id = pbt.partner_id
-            LEFT JOIN BenefitTypes bt ON pbt.type_id = bt.type_id
-            WHERE 1=1
-        """
-        params = []
-
-        if scopes:
-            query += " AND p.scope IN %s"
-            params.append(tuple(scopes))
-            
-        if category:
-            query += " AND bc.name = %s"
-            params.append(category)
-
-        if type_ids:
-            query += " AND p.partner_id IN (SELECT partner_id FROM PartnerBenefitTypes WHERE type_id IN %s)"
-            params.append(tuple(type_ids))
-
-        if keyword and target in ('name', 'content'):
-            query += f" AND p.{target} LIKE %s"
-            params.append(f"%{keyword}%")
-
-        query += " GROUP BY p.partner_id ORDER BY p.start_date DESC"
-
-        cur = mysql.connection.cursor()
-        cur.execute(query, params)
-        results = cur.fetchall()
-        cur.close()
-
-        return render_template('search.html', results=results, keyword=keyword, target=target)
-
-    return render_template('search.html')  # GET 요청 시 기본 페이지
-
+    keyword = request.form.get('keyword', '').strip() if request.method == 'POST' else ''
+    return render_template('search.html', keyword=keyword)
 
 @main.route('/map', methods=['GET','POST'])
 def map():

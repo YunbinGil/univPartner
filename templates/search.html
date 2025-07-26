@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 
 <head>
     <meta charset="UTF-8" />
@@ -12,16 +12,90 @@
             overflow-x: hidden;
         }
     </style>
+    <script src="{{ url_for('static', filename='js/format.js') }}"></script>
 </head>
 
 <body>
     <h1>검색 결과</h1>
+
+    <div id="benefitBox" style="display: grid;">
+        <div id="partnerBox" style="display: flex; flex-direction: column; gap: 1rem;">
+            <br>
+        </div>
+    </div>
+
     <script>
-        const keyword = sessionStorage.getItem('searchKeyword');
-        const scope = sessionStorage.getItem('selectedScope');
+        const keyword = "{{ keyword }}";
+        const scopes = JSON.parse(sessionStorage.getItem('selectedScopes') || "[]");
         const typeIds = JSON.parse(sessionStorage.getItem('selectedTypeIds') || "[]");
         const category = sessionStorage.getItem('selectedCategory');
+        const searchTarget = sessionStorage.getItem('target') || '';
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // 검색어가 있다면 검색어 표시
+            if (keyword) {
+                const header = document.createElement('h3');
+                header.textContent = `검색어: ${keyword}`;
+                document.body.prepend(header);
+            }
+
+            // 조건이 있다면 조건 표시
+            if (scopes || typeIds.length > 0 || category) {
+                const conditionDiv = document.createElement('div');
+                conditionDiv.innerHTML = `<strong>적용된 조건:</strong> <br>
+                    ▸ 범위) ${scopes.length > 0 ? scopes.join(', ') : '없음'}<br> 
+                    ▸ 혜택 유형) ${typeIds.length > 0 ? typeIds.join(', ') : '없음'}<br>
+                    ▸ 카테고리) ${category || '없음'}`;
+                document.body.prepend(conditionDiv);
+            }
+
+            // 혜택 목록 가져오기
+
+            console.log({
+                keyword,
+                searchTarget,
+                scopes,
+                typeIds,
+                category
+            });
+
+
+            fetch('/search-results', {
+                method: 'POST',
+                body: new URLSearchParams({
+                    keyword,
+                    target: searchTarget,
+                    scopes: JSON.stringify(scopes),
+                    type_ids: JSON.stringify(typeIds),
+                    category
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    console.log(data);
+                    const partnerBox = document.getElementById('partnerBox');
+                    if (data.length === 0) {
+                        partnerBox.innerHTML = '<p>검색 결과가 없습니다.</p>';
+                    } else {
+                        data.forEach(p => {
+                            const benefitDiv = document.createElement('div');
+                            benefitDiv.className = 'benefit-item';
+                            benefitDiv.innerHTML = `
+                            <h4>${p.name}</h4>
+                                        <p><strong>내용:</strong> ${p.content.length > 50 ? p.content.slice(0, 50) + '...' : p.content}</p>
+                                        <p><strong>범위:</strong> ${p.scope}</p>
+                                        <p><strong>카테고리:</strong> ${p.category_id || '없음'}</p>  
+                                        <p><strong>기간:</strong> ${formatDate(p.start_date)} ~ ${formatDate(p.end_date)}</p>
+                                        <button onclick='GoPartnerEditPage(${JSON.stringify(p).replace(/'/g, "\\'")})'>수정하기</button>
+                        `;
+                            partnerBox.appendChild(benefitDiv);
+                        });
+                    }
+                });
+        });
     </script>
+
+
 </body>
 
 </html>
