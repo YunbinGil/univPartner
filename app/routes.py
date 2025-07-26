@@ -486,14 +486,68 @@ def get_benefit_types():
     cur.close()
     return jsonify(types)
 
+@main.route('/search', methods=['GET', 'POST'])
+def search():
+    if request.method == 'POST':
+        keyword = request.form.get('keyword', '').strip()
+        target = request.form.get('target')  # name or content
+        scope = request.form.get('scope')
+        category = request.form.get('category')
+        type_ids_str = request.form.get('type_ids')  # JSON string
+
+        type_ids = []
+        if type_ids_str:
+            import json
+            try:
+                type_ids = json.loads(type_ids_str)
+            except:
+                type_ids = []
+
+        # ✅ 쿼리 만들기
+        query = """
+            SELECT 
+                p.*, 
+                bc.name AS category_name,
+                GROUP_CONCAT(bt.name SEPARATOR ', ') AS benefit_types
+            FROM partners p
+            LEFT JOIN BenefitCategories bc ON p.category_id = bc.category_id
+            LEFT JOIN PartnerBenefitTypes pbt ON p.partner_id = pbt.partner_id
+            LEFT JOIN BenefitTypes bt ON pbt.type_id = bt.type_id
+            WHERE 1=1
+        """
+        params = []
+
+        if scope:
+            query += " AND p.scope = %s"
+            params.append(scope)
+
+        if category:
+            query += " AND bc.name = %s"
+            params.append(category)
+
+        if type_ids:
+            query += " AND p.partner_id IN (SELECT partner_id FROM PartnerBenefitTypes WHERE type_id IN %s)"
+            params.append(tuple(type_ids))
+
+        if keyword and target in ('name', 'content'):
+            query += f" AND p.{target} LIKE %s"
+            params.append(f"%{keyword}%")
+
+        query += " GROUP BY p.partner_id ORDER BY p.start_date DESC"
+
+        cur = mysql.connection.cursor()
+        cur.execute(query, params)
+        results = cur.fetchall()
+        cur.close()
+
+        return render_template('search.html', results=results, keyword=keyword, target=target)
+
+    return render_template('search.html')  # GET 요청 시 기본 페이지
+
 
 @main.route('/map', methods=['GET','POST'])
 def map():
     return render_template('map.html')
-
-@main.route('/condition', methods=['GET','POST'])
-def condition():
-    return render_template('condition.html')
 
 @main.route('/bookmark', methods=['GET','POST'])
 def bookmark():

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>검색</title>
+    <style>
+        html,
+        body {
+            margin: 20px;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>검색 결과</h1>
+    <script>
+        const keyword = sessionStorage.getItem('searchKeyword');
+        const scope = sessionStorage.getItem('selectedScope');
+        const typeIds = JSON.parse(sessionStorage.getItem('selectedTypeIds') || "[]");
+        const category = sessionStorage.getItem('selectedCategory');
+    </script>
+</body>
+
+</html>

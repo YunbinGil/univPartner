@@ -65,17 +65,38 @@
         .filter-group {
             margin-bottom: 20px;
         }
+
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+        }
     </style>
 </head>
 
 <body>
     <h1>홈화면이용</h1>
-    <a href="/menu"><button type="button">메뉴</button></a>
-    <a href="/map"><button type="button">제휴맵</button></a>
-    <button onclick="openModal()">상세조건</button></a>
-    <a href="/bookmark"><button type="button">북마크</button></a>
-    <a href="/mypage"><button type="button">마이페이지</button></a>
-    <a href="/recent"><button type="button">최근 본</button></a>
+    <div class="button-group">
+        <a href="/menu"><button type="button">메뉴</button></a>
+        <br> <br>
+        <div class="search-bar">
+            <select id="searchTarget">
+                <option value="name">가게명</option>
+                <option value="content">혜택내용</option>
+            </select>
+            <input type="text" id="searchInput" placeholder="키워드 검색..." />
+            <button onclick="GoSearch()">검색</button>
+        </div>
+        <br>
+        <a href="/map"><button type="button">제휴맵</button></a>
+        <button onclick="openModal()">상세조건</button></a>
+        <br><br>
+        <a href="/bookmark"><button type="button">북마크</button></a>
+        <a href="/mypage"><button type="button">마이페이지</button></a>
+        <a href="/recent"><button type="button">최근 본</button></a>
+    </div>
 
 
     <div class="modal-overlay" id="modalOverlay" onclick="closeModal()">
@@ -221,10 +242,41 @@
                 type_ids: [typeIds],
                 category: selectedCategory
             }, null, 2));
-            // window.location.href = '/map'; // 적용시 이동
+
         }
 
         document.addEventListener("DOMContentLoaded", resetFilters)
+
+        function GoSearch() {
+            const keyword = document.getElementById('searchInput').value.trim();
+            const searchTarget = document.getElementById('searchTarget').value;
+            // 조건 저장
+            const scope = sessionStorage.getItem('selectedScope');
+            const typeIds = sessionStorage.getItem('selectedTypeIds');
+            const category = sessionStorage.getItem('selectedCategory');
+
+            // ✅ form 생성해서 POST 전송
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/search';
+
+            const appendField = (name, value) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = name;
+                input.value = value;
+                form.appendChild(input);
+            };
+
+            if (keyword) appendField('keyword', keyword);
+            if (searchTarget) appendField('target', searchTarget);
+            if (scope) appendField('scope', scope);
+            if (typeIds) appendField('type_ids', typeIds);
+            if (category) appendField('category', category);
+
+            document.body.appendChild(form);
+            form.submit();
+        }
     </script>
 
 </body>
