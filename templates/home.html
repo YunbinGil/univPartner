@@ -1,16 +1,232 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8" />
     <title>홈이셔</title>
+    <style>
+        html,
+        body {
+            margin: 20px;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .modal {
+            text-align: center;
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            padding: 20px;
+            transition: bottom 0.5s ease-out;
+            box-sizing: border-box;
+        }
+
+        .modal.active {
+            bottom: 0;
+        }
+
+        .modal-header {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .toggle-btn {
+            margin: 5px;
+            padding: 6px 10px;
+            border: 1px solid #aaa;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .toggle-btn.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .filter-group {
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
+
 <body>
     <h1>홈화면이용</h1>
-    <a href="/menu"><button type="button">메뉴</button></a> 
-    <a href="/map"><button type="button">제휴맵</button></a> 
-    <a href="/condition"><button type="button">상세조건</button></a>
+    <a href="/menu"><button type="button">메뉴</button></a>
+    <a href="/map"><button type="button">제휴맵</button></a>
+    <button onclick="openModal()">상세조건</button></a>
     <a href="/bookmark"><button type="button">북마크</button></a>
     <a href="/mypage"><button type="button">마이페이지</button></a>
-    <a href="/recent"><button type="button">최근 본</button></a>  
+    <a href="/recent"><button type="button">최근 본</button></a>
+
+
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal()">
+        <div class="modal" id="conditionModal" onclick="event.stopPropagation()">
+            <div class="modal-header">상세조건 설정</div>
+
+            <div class="filter-group">
+                <span>제휴 범위 (1개 선택)</span><br>
+                <div id="scope-buttons"></div>
+            </div>
+
+            <div class="filter-group">
+                <span>혜택 형태 (복수 선택 가능) <span id="type-count">(0/4)</span> </span><br>
+                <div id="type-buttons"></div>
+            </div>
+
+            <div class="filter-group">
+                <span>카테고리 (1개 선택)</span><br>
+                <div id="category-buttons"></div>
+            </div>
+
+            <button onclick="resetFilters()">초기화</button>
+            <button onclick="applyFilters()">적용하기</button>
+        </div>
+    </div>
+
+    <script>
+        const typeOptions = ['할인', '제공', '이벤트', '새내기 혜택'];
+        const categoryOptions = ['건강', '교육', '엔터', '미용', '의류', '주거', '카페', '음식점', '호프'];
+
+        let selectedTypes = new Set();
+        let selectedCategory = null;
+        let selectedScope = "";
+
+        const benefitTypeMap = {};
+        fetch('/benefit/types')
+            .then(res => res.json())
+            .then(data => {
+                data.forEach(t => {
+                    benefitTypeMap[t.name] = t.type_id;
+                });
+            });
+
+        function openModal() {
+            document.getElementById('modalOverlay').style.display = 'block';
+            document.getElementById('conditionModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
+            document.getElementById('conditionModal').classList.remove('active');
+        }
+
+        function renderScopeButtons(scopeData) {
+            const container = document.getElementById("scope-buttons");
+            container.innerHTML = "";
+
+            const options = [
+                scopeData.univ,
+                `${scopeData.univ} ${scopeData.college}`,
+                `${scopeData.univ} ${scopeData.college} ${scopeData.major}`
+            ];
+
+            options.forEach(option => {
+                const btn = document.createElement("button");
+                btn.className = "toggle-btn";
+                btn.textContent = option;
+                btn.onclick = () => {
+                    selectedScope = option;
+                    [...container.children].forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function createToggleButtons(containerId, options, mode, onSelect, countSpanId = null) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = "";
+
+            options.forEach(option => {
+                const btn = document.createElement("button");
+                btn.className = "toggle-btn";
+                btn.textContent = option;
+
+                btn.onclick = () => {
+                    if (mode === "single") {
+                        onSelect(option);
+                        [...container.children].forEach(b => b.classList.remove("active"));
+                        btn.classList.add("active");
+                    } else {
+                        if (selectedTypes.has(option)) {
+                            selectedTypes.delete(option);
+                            btn.classList.remove("active");
+                        } else {
+                            selectedTypes.add(option);
+                            btn.classList.add("active");
+                        }
+                        if (countSpanId) {
+                            const countSpan = document.getElementById(countSpanId);
+                            countSpan.textContent = `(${selectedTypes.size}/${options.length})`;
+                        }
+                    }
+                };
+
+                container.appendChild(btn);
+            });
+
+            // 초기화 시 count도 세팅
+            if (mode === "multi" && countSpanId) {
+                document.getElementById(countSpanId).textContent = `(0/${options.length})`;
+            }
+        }
+
+        function resetFilters() {
+            selectedScope = "";
+            selectedTypes.clear();
+            selectedCategory = null;
+
+            createToggleButtons('type-buttons', typeOptions, "multi", null, "type-count");
+            createToggleButtons('category-buttons', categoryOptions, "single", val => selectedCategory = val);
+
+
+            fetch('/fetch/scope-info')
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.error) {
+                        renderScopeButtons(data);  // ✅ 유저 scope 렌더링
+                    }
+                });
+        }
+
+        function applyFilters() {
+            const typeIds = [...selectedTypes].map(name => benefitTypeMap[name]);
+            sessionStorage.setItem('selectedScope', selectedScope);
+            sessionStorage.setItem('selectedTypes', JSON.stringify([...selectedTypes]));
+            sessionStorage.setItem('selectedCategory', selectedCategory);
+
+            closeModal();
+
+            alert("적용된 조건:\n" + JSON.stringify({
+                scope: selectedScope,
+                type_ids: [typeIds],
+                category: selectedCategory
+            }, null, 2));
+            // window.location.href = '/map'; // 적용시 이동
+        }
+
+        document.addEventListener("DOMContentLoaded", resetFilters)
+    </script>
+
 </body>
+
 </html>

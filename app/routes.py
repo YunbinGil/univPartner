@@ -457,6 +457,35 @@ def update_benefit():
         mysql.connection.rollback()
         return "서버 오류 발생", 500
 
+@main.route('/fetch/scope-info', methods=['GET'])
+def fetch_scope_info():
+    if 'user_id' not in session:
+        return jsonify({'error': '로그인 필요'}), 401
+
+    user_id = session['user_id']
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
+    user = cur.fetchone()
+    cur.close()
+
+    if not user:
+        return jsonify({'error': '유저 정보 없음'}), 403
+
+    return jsonify({
+        'role': user['role'],
+        'univ': user['univ'],
+        'college': user['college'],
+        'major': user['major']
+    })
+
+@main.route('/benefit/types', methods=['GET'])
+def get_benefit_types():
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT type_id, name FROM BenefitTypes")
+    types = cur.fetchall()
+    cur.close()
+    return jsonify(types)
+
 
 @main.route('/map', methods=['GET','POST'])
 def map():
