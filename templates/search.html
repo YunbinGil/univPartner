@@ -11,12 +11,114 @@
             padding: 20px;
             overflow-x: hidden;
         }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .modal {
+            text-align: center;
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            padding: 20px;
+            transition: bottom 0.5s ease-out;
+            box-sizing: border-box;
+        }
+
+        .modal.active {
+            bottom: 0;
+        }
+
+        .modal-header {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .toggle-btn {
+            margin: 5px;
+            padding: 6px 10px;
+            border: 1px solid #aaa;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .toggle-btn.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .filter-group {
+            margin-bottom: 20px;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+        }
     </style>
     <script src="{{ url_for('static', filename='js/format.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/search.js') }}"></script>
 </head>
 
 <body>
+    <a href="/home"><button type="button">홈 </button></a>
     <h1>검색 결과</h1>
+
+    <div class="search-bar">
+        <select id="searchTarget">
+            <option value="all" selected>가게명+내용</option>
+            <option value="name">가게명</option>
+            <option value="content">혜택내용</option>
+        </select>
+        <input type="text" id="searchInput" placeholder="키워드 검색..." />
+        <button onclick="GoSearch()">검색</button>
+    </div>
+    <br>
+    <a href="/map"><button type="button">제휴맵</button></a>
+    <button onclick="openModal()">상세조건</button></a>
+
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal()">
+        <div class="modal" id="conditionModal" onclick="event.stopPropagation()">
+            <div class="modal-header">상세조건 설정</div>
+
+            <div class="filter-group">
+                <span>제휴 범위 (복수 선택 가능)</span><span id="scope-count">(0/3)</span><br>
+                <div id="scope-buttons"></div>
+            </div>
+
+            <div class="filter-group">
+                <span>혜택 형태 (복수 선택 가능) <span id="type-count">(0/4)</span> </span><br>
+                <div id="type-buttons"></div>
+            </div>
+
+            <div class="filter-group">
+                <span>카테고리 (1개 선택)</span><br>
+                <div id="category-buttons"></div>
+            </div>
+
+            <button onclick="resetFilters()">초기화</button>
+            <button onclick="applyFilters()">적용하기</button>
+        </div>
+    </div>
+
 
     <div id="benefitBox" style="display: grid;">
         <div id="partnerBox" style="display: flex; flex-direction: column; gap: 1rem;">
@@ -25,6 +127,25 @@
     </div>
 
     <script>
+        // 초기화
+        const typeOptions = ['할인', '제공', '이벤트', '새내기 혜택'];
+        const categoryOptions = ['건강', '교육', '엔터', '미용', '의류', '주거', '카페', '음식점', '호프'];
+
+        let selectedTypes = new Set();
+        let selectedCategory = null;
+        let selectedScopes = new Set();
+
+        const benefitTypeMap = {};
+        fetch('/benefit/types')
+            .then(res => res.json())
+            .then(data => {
+                data.forEach(t => {
+                    benefitTypeMap[t.name] = t.type_id;
+                });
+            });
+
+        document.addEventListener("DOMContentLoaded", resetFilters)
+        
         const keyword = "{{ keyword }}";
         const scopes = JSON.parse(sessionStorage.getItem('selectedScopes') || "[]");
         const typeIds = JSON.parse(sessionStorage.getItem('selectedTypeIds') || "[]");
