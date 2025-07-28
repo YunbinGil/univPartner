@@ -21,13 +21,20 @@
             </select>
         </label>
     </form>
-    
+
     {% if bookmarks|length == 0 %}
     <p>북마크한 제휴 혜택이 없습니다.</p>
     {% else %}
     {% for b in bookmarks %}
     <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
-        <h4>{{ b.name }}</h4>
+        <h4>{{ b.name }}
+            {% if selected_folder == '전체' %}
+            <span style="font-size: small; color: blue">({{ b.folder_names }})</span>
+            {% else %}
+            <span style="font-size: small; color: blue">({{ selected_folder }})</span>
+            {% endif %}
+        </h4>
+
         <p><strong>내용:</strong> {{ b.content[:50] }}{% if b.content|length > 50 %}...{% endif %}</p>
         <p><strong>범위:</strong> {{ b.scope }}</p>
         <p><strong>카테고리:</strong> {{ b.category_name or '없음' }}</p>

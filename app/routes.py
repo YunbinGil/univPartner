@@ -595,7 +595,9 @@ def bookmark():
         """, (user_id, folder))
     else:
         cur.execute("""
-            SELECT p.*, b.folder_name, bc.name AS category_name,
+            SELECT p.*, 
+            GROUP_CONCAT(DISTINCT b.folder_name ORDER BY b.folder_name SEPARATOR ', ') AS folder_names,
+            bc.name AS category_name,
                    GROUP_CONCAT(bt.name SEPARATOR ', ') AS benefit_types
             FROM Bookmarks b
             JOIN Partners p ON b.partner_id = p.partner_id
@@ -603,7 +605,7 @@ def bookmark():
             LEFT JOIN PartnerBenefitTypes pbt ON p.partner_id = pbt.partner_id
             LEFT JOIN BenefitTypes bt ON pbt.type_id = bt.type_id
             WHERE b.user_id = %s
-            GROUP BY p.partner_id, b.folder_name
+            GROUP BY p.partner_id
             ORDER BY p.start_date DESC
         """, (user_id,))
     
