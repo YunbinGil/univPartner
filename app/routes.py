@@ -591,34 +591,68 @@ def bookmark():
 
     return render_template('bookmark.html', bookmarks=bookmarks)
 
-@main.route('/bookmark/toggle', methods=['POST'])
-def toggle_bookmark():
+@main.route('/bookmark/add', methods=['POST'])
+def add_bookmark():
     if 'user_id' not in session:
         return jsonify({'error': '로그인 필요'}), 401
 
     user_id = session['user_id']
     partner_id = request.form.get('partner_id')
+    folder_name = request.form.get('folder_name')
 
-    if not partner_id:
-        return jsonify({'error': 'partner_id 없음'}), 400
+    if not partner_id or not folder_name:
+        return jsonify({'error': '필수 값 없음'}), 400
 
     cur = mysql.connection.cursor()
+    # 이미 있는지 확인
+    cur.execute("""
+        SELECT 1 FROM Bookmarks 
+        WHERE user_id = %s AND partner_id = %s AND folder_name = %s
+    """, (user_id, partner_id, folder_name))
+    if cur.fetchone():
+        return jsonify({'status': 'already exists'})  # ❗ 중복 방지
 
-    # 존재하는지 확인
-    cur.execute("SELECT * FROM Bookmarks WHERE user_id = %s AND partner_id = %s", (user_id, partner_id))
-    existing = cur.fetchone()
+    cur.execute("""
+        INSERT INTO Bookmarks (user_id, partner_id, folder_name)
+        VALUES (%s, %s, %s)
+    """, (user_id, partner_id, folder_name))
+    mysql.connection.commit()
+    cur.close()
+    return jsonify({'status': 'added'})
+@main.route('/bookmark/delete', methods=['POST'])
+def delete_bookmark():
+    if 'user_id' not in session:
+        return jsonify({'error': '로그인 필요'}), 401
 
-    if existing:
-        cur.execute("DELETE FROM Bookmarks WHERE user_id = %s AND partner_id = %s", (user_id, partner_id))
-        mysql.connection.commit()
-        cur.close()
-        return jsonify({'status': 'removed'})
-    else:
-        cur.execute("INSERT INTO Bookmarks (user_id, partner_id) VALUES (%s, %s)", (user_id, partner_id))
-        mysql.connection.commit()
-        cur.close()
-        return jsonify({'status': 'added'})
+    user_id = session['user_id']
+    partner_id = request.form.get('partner_id')
+    folder_name = request.form.get('folder_name')
 
+    if not partner_id or not folder_name:
+        return jsonify({'error': '필수 값 없음'}), 400
+
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        DELETE FROM Bookmarks 
+        WHERE user_id = %s AND partner_id = %s AND folder_name = %s
+    """, (user_id, partner_id, folder_name))
+    mysql.connection.commit()
+    cur.close()
+
+    return jsonify({'status': 'deleted'})
+
+# 북마크 폴더 목록 조회
+@main.route('/bookmark/folders')
+def bookmark_folders():
+    if 'user_id' not in session:
+        return jsonify([])
+
+    user_id = session['user_id']
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT DISTINCT folder_name FROM Bookmarks WHERE user_id = %s", (user_id,))
+    rows = cur.fetchall()
+    cur.close()
+    return jsonify([r['folder_name'] for r in rows])
 
 
 @main.route('/mypage', methods=['GET','POST'])
