@@ -11,7 +11,17 @@
 <body>
     <a href="/home"><button>홈으로</button></a>
     <h2>내 북마크 목록</h2>
-
+    <form method="get" action="/bookmark">
+        <label>폴더 선택:
+            <select name="folder" onchange="this.form.submit()">
+                <option value="전체" {% if selected_folder=='전체' %}selected{% endif %}>전체</option>
+                {% for f in folders %}
+                <option value="{{ f }}" {% if selected_folder==f %}selected{% endif %}>{{ f }}</option>
+                {% endfor %}
+            </select>
+        </label>
+    </form>
+    
     {% if bookmarks|length == 0 %}
     <p>북마크한 제휴 혜택이 없습니다.</p>
     {% else %}

@@ -571,23 +571,47 @@ def bookmark():
         return redirect(url_for('main.login'))
 
     user_id = session['user_id']
+    folder = request.args.get('folder')  # 쿼리 스트링으로 폴더 필터링
+
     cur = mysql.connection.cursor()
-    cur.execute("""
-        SELECT 
-            p.*, 
-            bc.name AS category_name,
-            GROUP_CONCAT(bt.name SEPARATOR ', ') AS benefit_types
-        FROM Bookmarks b
-        JOIN Partners p ON b.partner_id = p.partner_id
-        LEFT JOIN BenefitCategories bc ON p.category_id = bc.category_id
-        LEFT JOIN PartnerBenefitTypes pbt ON p.partner_id = pbt.partner_id
-        LEFT JOIN BenefitTypes bt ON pbt.type_id = bt.type_id
-        WHERE b.user_id = %s
-        GROUP BY p.partner_id
-        ORDER BY p.start_date DESC
-    """, (user_id,))
+
+    # 폴더 목록 가져오기
+    cur.execute("SELECT DISTINCT folder_name FROM Bookmarks WHERE user_id = %s", (user_id,))
+    folders = [row['folder_name'] for row in cur.fetchall()]
+
+    # 필터링된 북마크 조회
+    if folder and folder != '전체':
+        cur.execute("""
+            SELECT p.*, b.folder_name, bc.name AS category_name,
+                   GROUP_CONCAT(bt.name SEPARATOR ', ') AS benefit_types
+            FROM Bookmarks b
+            JOIN Partners p ON b.partner_id = p.partner_id
+            LEFT JOIN BenefitCategories bc ON p.category_id = bc.category_id
+            LEFT JOIN PartnerBenefitTypes pbt ON p.partner_id = pbt.partner_id
+            LEFT JOIN BenefitTypes bt ON pbt.type_id = bt.type_id
+            WHERE b.user_id = %s AND b.folder_name = %s
+            GROUP BY p.partner_id, b.folder_name
+            ORDER BY p.start_date DESC
+        """, (user_id, folder))
+    else:
+        cur.execute("""
+            SELECT p.*, b.folder_name, bc.name AS category_name,
+                   GROUP_CONCAT(bt.name SEPARATOR ', ') AS benefit_types
+            FROM Bookmarks b
+            JOIN Partners p ON b.partner_id = p.partner_id
+            LEFT JOIN BenefitCategories bc ON p.category_id = bc.category_id
+            LEFT JOIN PartnerBenefitTypes pbt ON p.partner_id = pbt.partner_id
+            LEFT JOIN BenefitTypes bt ON pbt.type_id = bt.type_id
+            WHERE b.user_id = %s
+            GROUP BY p.partner_id, b.folder_name
+            ORDER BY p.start_date DESC
+        """, (user_id,))
+    
     bookmarks = cur.fetchall()
     cur.close()
+
+    return render_template('bookmark.html', bookmarks=bookmarks, folders=folders, selected_folder=folder or "전체")
+
 
     return render_template('bookmark.html', bookmarks=bookmarks)
 
