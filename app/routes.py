@@ -565,9 +565,61 @@ def search():
 def map():
     return render_template('map.html')
 
-@main.route('/bookmark', methods=['GET','POST'])
+@main.route('/bookmark')
 def bookmark():
-    return render_template('bookmark.html')
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+
+    user_id = session['user_id']
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        SELECT 
+            p.*, 
+            bc.name AS category_name,
+            GROUP_CONCAT(bt.name SEPARATOR ', ') AS benefit_types
+        FROM Bookmarks b
+        JOIN Partners p ON b.partner_id = p.partner_id
+        LEFT JOIN BenefitCategories bc ON p.category_id = bc.category_id
+        LEFT JOIN PartnerBenefitTypes pbt ON p.partner_id = pbt.partner_id
+        LEFT JOIN BenefitTypes bt ON pbt.type_id = bt.type_id
+        WHERE b.user_id = %s
+        GROUP BY p.partner_id
+        ORDER BY p.start_date DESC
+    """, (user_id,))
+    bookmarks = cur.fetchall()
+    cur.close()
+
+    return render_template('bookmark.html', bookmarks=bookmarks)
+
+@main.route('/bookmark/toggle', methods=['POST'])
+def toggle_bookmark():
+    if 'user_id' not in session:
+        return jsonify({'error': '로그인 필요'}), 401
+
+    user_id = session['user_id']
+    partner_id = request.form.get('partner_id')
+
+    if not partner_id:
+        return jsonify({'error': 'partner_id 없음'}), 400
+
+    cur = mysql.connection.cursor()
+
+    # 존재하는지 확인
+    cur.execute("SELECT * FROM Bookmarks WHERE user_id = %s AND partner_id = %s", (user_id, partner_id))
+    existing = cur.fetchone()
+
+    if existing:
+        cur.execute("DELETE FROM Bookmarks WHERE user_id = %s AND partner_id = %s", (user_id, partner_id))
+        mysql.connection.commit()
+        cur.close()
+        return jsonify({'status': 'removed'})
+    else:
+        cur.execute("INSERT INTO Bookmarks (user_id, partner_id) VALUES (%s, %s)", (user_id, partner_id))
+        mysql.connection.commit()
+        cur.close()
+        return jsonify({'status': 'added'})
+
+
 
 @main.route('/mypage', methods=['GET','POST'])
 def mypage():

@@ -76,6 +76,7 @@
     </style>
     <script src="{{ url_for('static', filename='js/format.js') }}"></script>
     <script src="{{ url_for('static', filename='js/search.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bookmark.js') }}"></script>
 </head>
 
 <body>
@@ -88,7 +89,7 @@
             <option value="name">가게명</option>
             <option value="content">혜택내용</option>
         </select>
-        <input type="text" id="searchInput"/>
+        <input type="text" id="searchInput" />
         <button onclick="GoSearch()">검색</button>
     </div>
     <br>
@@ -145,7 +146,14 @@
             });
 
         document.addEventListener("DOMContentLoaded", resetFilters)
-        
+
+        document.getElementById('partnerBox').addEventListener('click', function (e) {
+            if (e.target.classList.contains('bookmark-btn')) {
+                const id = e.target.dataset.id;
+                toggleBookmark(id);
+            }
+        });
+
         const keyword = "{{ keyword }}";
         const scopes = JSON.parse(sessionStorage.getItem('selectedScopes') || "[]");
         const typeIds = JSON.parse(sessionStorage.getItem('selectedTypeIds') || "[]");
@@ -204,6 +212,7 @@
                             benefitDiv.className = 'benefit-item';
                             benefitDiv.innerHTML = `
                             <h4>${p.name}</h4>
+                                        <button class="bookmark-btn" data-id="${p.partner_id}">⭐ 북마크 </button>
                                         <p><strong>내용:</strong> ${p.content.length > 50 ? p.content.slice(0, 50) + '...' : p.content}</p>
                                         <p><strong>범위:</strong> ${p.scope}</p>
                                         <p><strong>카테고리:</strong> ${p.category_id || '없음'}</p>  

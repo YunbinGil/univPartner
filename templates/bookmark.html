@@ -1,10 +1,41 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
+
 <head>
-    <meta charset="UTF-8" />
-    <title>북마크</title>
+    <meta charset="UTF-8">
+    <title>내 북마크</title>
+    <script src="{{ url_for('static', filename='js/format.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bookmark.js') }}"></script>
 </head>
+
 <body>
-    <h1>북마크</h1>
+    <a href="/home"><button>홈으로</button></a>
+    <h2>내 북마크 목록</h2>
+
+    {% if bookmarks|length == 0 %}
+    <p>북마크한 제휴 혜택이 없습니다.</p>
+    {% else %}
+    {% for b in bookmarks %}
+    <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+        <h4>{{ b.name }}</h4>
+        <p><strong>내용:</strong> {{ b.content[:50] }}{% if b.content|length > 50 %}...{% endif %}</p>
+        <p><strong>범위:</strong> {{ b.scope }}</p>
+        <p><strong>카테고리:</strong> {{ b.category_name or '없음' }}</p>
+        <p><strong>혜택 형태:</strong> {{ b.benefit_types or '없음' }}</p>
+        <p><strong>기간:</strong> {{ b.start_date }} ~ {{ b.end_date }}</p>
+        <button class="bookmark-btn" data-id="{{ b.partner_id }}">⭐ 북마크 </button>
+
+        {% endfor %}
+        {% endif %}
+        <script>
+            document.querySelectorAll('.bookmark-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.dataset.id;
+                    toggleBookmark(id);
+                });
+            });
+
+        </script>
 </body>
+
 </html>
