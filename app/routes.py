@@ -524,7 +524,7 @@ def search_results():
         query += f" AND p.scope IN ({placeholders})"
         params.extend(scopes)
 
-    if category:
+    if category and category != 'null':
         query += " AND bc.name = %s"
         params.append(category)
 
@@ -540,6 +540,9 @@ def search_results():
     if keyword and target in ('name', 'content'):
         query += f" AND p.{target} LIKE %s"
         params.append(f"%{keyword}%")
+    elif keyword and target == 'all':
+        query += " AND (p.name LIKE %s OR p.content LIKE %s)"
+        params.extend([f"%{keyword}%", f"%{keyword}%"])
 
     query += " GROUP BY p.partner_id ORDER BY p.start_date DESC"
 

@@ -83,6 +83,7 @@
         <br> <br>
         <div class="search-bar">
             <select id="searchTarget">
+                <option value="all" selected>가게명+내용</option>
                 <option value="name">가게명</option>
                 <option value="content">혜택내용</option>
             </select>
@@ -271,11 +272,13 @@
             form.action = '/search';
 
             const appendField = (name, value) => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = name;
-                input.value = value;
-                form.appendChild(input);
+                if (value) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = name;
+                    input.value = value;
+                    form.appendChild(input);
+                }
             };
 
             if (keyword) appendField('keyword', keyword);
