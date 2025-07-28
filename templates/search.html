@@ -88,7 +88,7 @@
             <option value="name">가게명</option>
             <option value="content">혜택내용</option>
         </select>
-        <input type="text" id="searchInput" placeholder="키워드 검색..." />
+        <input type="text" id="searchInput"/>
         <button onclick="GoSearch()">검색</button>
     </div>
     <br>
@@ -158,6 +158,7 @@
                 const header = document.createElement('h3');
                 header.textContent = `검색어: ${keyword}`;
                 document.body.prepend(header);
+                document.getElementById('searchInput').value = keyword;
             }
 
             // 조건이 있다면 조건 표시
