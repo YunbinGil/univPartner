@@ -263,7 +263,7 @@ def add_benefit():
         return redirect(url_for('main.login'))
 
     user_id = session['user_id']
-    #fetch_and_update_departments() #api연결후
+    fetch_and_update_departments() #api연결후
 
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
@@ -729,6 +729,8 @@ def allowed_file(filename):
 
 @main.route('/mypage/editor-apply', methods=['GET', 'POST'])
 def editor_apply():
+    fetch_and_update_departments()
+    
     if 'user_id' not in session:
         return redirect(url_for('main.login'))
 
