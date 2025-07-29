@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>편집자 인증</title>
+    <style>
+        .error {
+            color: red;
+            font-size: 0.9em;
+        }
+
+        .success {
+            color: green;
+            font-size: 0.9em;
+        }
+
+        .gray {
+            color: gray;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>편집자 인증 완료</h1>
+    <h2>편집자 인증이 완료되었습니다!</h2>
+    <span class="success">인증 범위: {{ univ }} {{ college }} {{ major }}</span><br>
+    <span>제휴정보을 추가하거나 수정할 수 있습니다.</span><br>
+    <a href="/menu"><button type="button">메뉴로 돌아가기</button></a>
+    <br><br>
+    <button type="button" onclick="confirmApplyEditor()">새로운 인증 신청하기</button>
+    <p class="gray">새로운 편집자 인증을 신청하면 기존 인증 내역은 사라집니다.</p>
+
+    <script>
+        function confirmApplyEditor() {
+            const confirmed = window.confirm("새로운 편집자 인증을 신청하면 기존 인증 내역은 사라집니다.\n정말 신청하시겠습니까?");
+            if (confirmed) {
+                window.location.href = "/mypage/editor-apply";
+            }
+        }
+    </script>
+
+</body>
+
+</html>

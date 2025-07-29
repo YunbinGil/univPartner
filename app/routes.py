@@ -2,6 +2,12 @@ from flask import Blueprint,  request, render_template, redirect, url_for, jsoni
 from app import mysql
 import os
 import requests #외부 api요청보내기 용, flask의 request는 사용자가 보낸 요청 받기용임
+from datetime import datetime
+from werkzeug.utils import secure_filename
+
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), '../uploads')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
+
 
 #API_BASE_URL = 'http://api.data.go.kr/openapi/tn_pubr_public_univ_major_api'
 API_KEY = 'aZcI7QFc9yUfWvmODptQxI2SMyDwOsf8i30dGPKLjvbUO7Dcj67luMuga0d9hL4hS9EKWwS9GxDnxq7O%2BtBM9w%3D%3D'
@@ -233,14 +239,23 @@ def fetch_editor_info():
         return jsonify({'role': 'admin'})
 
     if user['role'] == 'editor':
-        cur.execute("SELECT * FROM editors WHERE submitted_by = %s AND status = 'approved'", (user_id,))
+        cur.execute("SELECT * FROM editors WHERE submitted_by = %s", (user_id,))
         editor = cur.fetchone()
         cur.close()
-
-        if editor:
-            return jsonify(editor)
+        if(editor):
+            return jsonify(serialize_editor(editor))
 
     return jsonify({'error': '편집자 승인 필요'}), 403
+
+
+def serialize_editor(editor):
+    result = {}
+    for key, val in editor.items():
+        if isinstance(val, datetime):
+            result[key] = val.isoformat()
+        else:
+            result[key] = val
+    return result
 
 @main.route('/benefit/add', methods=['GET','POST'])
 def add_benefit():
@@ -645,6 +660,7 @@ def add_bookmark():
     mysql.connection.commit()
     cur.close()
     return jsonify({'status': 'added'})
+
 @main.route('/bookmark/delete', methods=['POST'])
 def delete_bookmark():
     if 'user_id' not in session:
@@ -684,6 +700,79 @@ def bookmark_folders():
 @main.route('/mypage', methods=['GET','POST'])
 def mypage():
     return render_template('mypage.html')
+
+@main.route('/mypage/editor-pending', methods=['GET','POST'])
+def editor_pending():
+    return render_template('editor_auth_pending.html')
+
+@main.route('/mypage/editor-approved', methods=['GET','POST'])
+def editor_approved():
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+
+    user_id = session['user_id']
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM editors WHERE submitted_by = %s AND status = 'approved'", (user_id,))
+    editor = cur.fetchone()
+    cur.close()
+
+    if not editor:
+        return "❌ 인증된 편집자 정보가 없습니다."
+
+    return render_template('editor_auth_approved.html', 
+                           univ=editor['univ'],
+                           college=editor['college'],
+                           major=editor['major'])
+    
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@main.route('/mypage/editor-apply', methods=['GET', 'POST'])
+def editor_apply():
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+
+    if request.method == 'POST':
+        name = request.form['name']
+        birthdate = request.form['birthdate']
+        sex = request.form['sex']
+        univ = request.form['univ']
+        college = request.form['college']
+        major = request.form['major']
+        aff_council = 'univ'  # 기본값, 추후 확장 가능
+
+        student_id_file = request.files['student_id']
+        council_roster_file = request.files['council_roster']
+
+        if not (allowed_file(student_id_file.filename) and allowed_file(council_roster_file.filename)):
+            return "❌ 업로드 실패: 파일 형식이 잘못되었습니다.", 400
+
+        student_id_filename = secure_filename(student_id_file.filename)
+        council_roster_filename = secure_filename(council_roster_file.filename)
+
+        student_id_path = os.path.join(UPLOAD_FOLDER, student_id_filename)
+        council_roster_path = os.path.join(UPLOAD_FOLDER, council_roster_filename)
+
+        student_id_file.save(student_id_path)
+        council_roster_file.save(council_roster_path)
+
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            INSERT INTO editors 
+            (submitted_by, name, birthdate, sex, univ, college, major, aff_council,
+             student_card_url, student_list_doc_url)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            session['user_id'], name, birthdate, sex, univ, college, major, aff_council,
+            student_id_filename, council_roster_filename
+        ))
+        mysql.connection.commit()
+        cur.close()
+
+        return redirect(url_for('main.editor_pending'))
+
+    return render_template('editor_auth_apply.html')
+
 
 @main.route('/recent', methods=['GET','POST'])
 def recent():

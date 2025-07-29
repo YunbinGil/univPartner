@@ -72,7 +72,7 @@
                         msg.className = 'success';
                         adminBox.style.display = 'block';
                         loadUnivList(); // 셀렉트박스 초기화
-                    } else {
+                    } else if (data.status === 'approved') {
                         // 승인된 편집자
                         const { univ, college, major, aff_council } = data;
                         let fullScope = univ;

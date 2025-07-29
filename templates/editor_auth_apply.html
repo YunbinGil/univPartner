@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>편집자 인증 신청</title>
+    <script src="{{ url_for('static', filename='js/school_select.js') }}"></script>
+</head>
+
+<body>
+    <h1>편집자 인증 신청</h1>
+    <p>편집자 인증을 신청하려면 아래 정보를 입력해주세요.</p>
+    <form action="{{ url_for('main.editor_apply') }}" method="POST" onsubmit=return>
+        <label>이름:</label><br>
+        <input type="text" name="name" required><br><br>
+
+        <label>생년월일:</label><br>
+        <input type="date" name="birthdate" required><br><br>
+
+        <label>성별:</label><br>
+        <input type="radio" name="sex">남성
+        <input type="radio" name="sex">여성<br><br>
+
+        <label>대학교:
+            <select name="univ" id="univ" onchange="updateCollegeOptions()" required>
+                <option value="">대학교 선택</option>
+            </select>
+        </label><br>
+        <label>단과대학:
+            <select name="college" id="college" onchange="updateMajorOptions()" required>
+                <option value="">단과대학 선택</option>
+            </select>
+        </label><br>
+        <label>학과:
+            <select name="major" id="major" required>
+                <option value="">학과 선택</option>
+            </select>
+        </label><br><br>
+
+        <input type="file" name="student_id" accept="image/*,application/pdf" required> 학생증/입학증 업로드 (이미지 또는 pdf) <br>
+        <input type="file" name="council_roster" accept="image/*,application/pdf" required> 학생회 명단 문서 업로드 (이미지 또는 pdf)
+    </form>
+
+    <button type="submit">신청하기</button>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // 대학교 목록 불러오기
+            loadUnivList("univ");
+        });
+        function updateCollegeOptions() {
+            updateCollegeOptionsFromUniv("univ", "college");
+        }
+
+        function updateMajorOptions() {
+            updateMajorOptionsFromCollege("univ", "college", "major");
+        }
+    </script>
+</body>
+
+</html>

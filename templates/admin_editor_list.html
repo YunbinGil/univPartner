@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>편집자 인증 신청 목록</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .pending { color: orange; font-weight: bold; }
+        .approved { color: green; font-weight: bold; }
+        .rejected { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>편집자 인증 신청 목록</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>신청자 ID</th>
+                <th>이름</th>
+                <th>성별</th>
+                <th>생년월일</th>
+                <th>소속</th>
+                <th>인증 범위</th>
+                <th>학생증</th>
+                <th>학생회 명단</th>
+                <th>상태</th>
+                <th>제출일</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in editors %}
+            <tr>
+                <td>{{ e.submitted_by }}</td>
+                <td>{{ e.name }}</td>
+                <td>{{ e.sex }}</td>
+                <td>{{ e.birthdate }}</td>
+                <td>{{ e.univ }} / {{ e.college }} / {{ e.major }}</td>
+                <td>{{ e.aff_council }}</td>
+                <td><a href="/uploads/{{ e.student_card_url }}" target="_blank">보기</a></td>
+                <td><a href="/uploads/{{ e.student_list_doc_url }}" target="_blank">보기</a></td>
+                <td class="{{ e.status }}">{{ e.status }}</td>
+                <td>{{ e.submitted_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

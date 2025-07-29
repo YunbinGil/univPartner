@@ -19,5 +19,8 @@ def create_app():
 
     from .routes import main
     app.register_blueprint(main) #routes.py에서 가져온 라우터 묶음을 등록
+    
+    from .admin_routes import admin
+    app.register_blueprint(admin)
 
     return app
