@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>내 정보 수정</title>
+    <style>
+        .error {
+            color: red;
+            font-size: 0.9em;
+        }
+
+        .success {
+            color: green;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>회원 정보 수정</h2>
+    <form method="POST" action="/mypage/edit-info" onsubmit=return>
+        <label>닉네임: <input type="text" name="nickname" id="nickname" required></label>
+        <button type="button" onclick="checkDuplicateNickName()">중복확인</button>
+        <br><span id="nicknameMessage" class="error"></span><br>
+
+        <label>대학교:
+            <select name="univ" id="univ" onchange="updateCollegeOptions()" required>
+                <option value="">대학교 선택</option>
+            </select>
+        </label><br>
+        <label>단과대학:
+            <select name="college" id="college" onchange="updateMajorOptions()" required>
+                <option value="">단과대학 선택</option>
+            </select>
+        </label><br>
+        <label>학과:
+            <select name="major" id="major" required>
+                <option value="">학과 선택</option>
+            </select>
+        </label><br><br>
+        <button type="submit">시작하기</button> <br>
+        <br><br><br>
+    </form>
+
+    <script src="{{ url_for('static', filename='js/school_select.js') }}"></script>
+    <script type=text/javascript>
+        const userData = {{ user | tojson }};
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // 닉네임 채우기
+            document.getElementById('nickname').value = user.nickname;
+
+            // 대학교 리스트 먼저 불러오기
+            loadUnivList("univ").then(() => {
+                document.getElementById('univ').value = user.univ;
+
+                // 단과대학도 그 다음 로드
+                updateCollegeOptions("univ", "college").then(() => {
+                    document.getElementById('college').value = user.college;
+
+                    // 마지막으로 학과 로드
+                    updateMajorOptions("univ", "college", "major").then(() => {
+                        document.getElementById('major').value = user.major;
+                    });
+                });
+            });
+
+        });
+
+        function updateCollegeOptions() {
+            updateCollegeOptionsFromUniv("univ", "college");
+        }
+
+        function updateMajorOptions() {
+            updateMajorOptionsFromCollege("univ", "college", "major");
+        }
+
+        let nicknameCheckPassed = false;
+
+        function checkDuplicateNickName() {
+            const nickname = document.getElementById('nickname').value;
+            if (!nickname) {
+                document.getElementById('nicknameMessage').textContent = "닉네임을 입력하세요";
+                return;
+            }
+
+            fetch(`/check-nickname?nickname=${encodeURIComponent(nickname)}`)
+                .then(res => res.json())
+                .then(data => {
+                    const msg = document.getElementById('nicknameMessage');
+                    if (data.exists) {
+                        msg.textContent = "이미 존재하는 닉네임입니다";
+                        msg.className = 'error';
+                        nicknameCheckPassed = false;
+                    } else {
+                        msg.textContent = "사용 가능한 닉네임입니다";
+                        msg.className = 'success';
+                        nicknameCheckPassed = true;
+                    }
+                });
+        }
+
+    </script>
+</body>
+
+</html>

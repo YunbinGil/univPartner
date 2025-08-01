@@ -69,8 +69,8 @@ def signup_profile():
         cur.close()
 
         return redirect(url_for('main.home')) 
-    print("🔄 학과 테이블 업데이트 점검 중...")
-    fetch_and_update_departments()
+    # print("🔄 학과 테이블 업데이트 점검 중...")
+    # fetch_and_update_departments()
     return render_template('signup_profile.html')
 
 @main.route('/home', methods=['GET','POST'])
@@ -120,7 +120,10 @@ def fetch_and_update_departments():
     while True:
         url = (
             f"{API_BASE_URL}"
-            f"?serviceKey={API_KEY}&returnType=json&pageNo={page}&numOfRows=1000&type=json"
+            f"?serviceKey={API_KEY}"
+            f"&pageNo={page}"
+            f"&numOfRows=1000"
+            f"&type=json"
         )
 
         print(url)
@@ -163,18 +166,24 @@ def fetch_and_update_departments():
     if existing_date is None or str(existing_date) < new_date:
         print('학과 데이터 갱신됨. DB 새로 저장 시작')
         cur.execute("DELETE FROM departments")
-        for item in items:
-            cur.execute("""
-                INSERT INTO departments (univ, college, major, updated_at)
-                VALUES (%s, %s, %s, %s)
-            """, (
+        # 1. values 리스트 생성
+        values = [
+            (
                 item.get('SCHL_NM'),
                 item.get('COLLEGE_NM'),
                 item.get('SCSBJT_NM'),
                 item.get('CRTR_YMD')
-            ))
+            )
+            for item in all_items
+        ]
+
+        # 2. 한 번에 insert
+        cur.executemany("""
+            INSERT INTO departments (univ, college, major, updated_at)
+            VALUES (%s, %s, %s, %s)
+        """, values)
         mysql.connection.commit()
-    cur.close()
+        cur.close()
 
 @main.route('/api/univ-list')
 def univ_list():
@@ -208,12 +217,65 @@ def major_list():
     cur.close()
     return jsonify([row['major'] for row in rows])
 
-@main.route('/mypage-edit') #마이페이지 - 회원정보수정 
+@main.route('/mypage/edit-info', methods=['GET','POST']) #마이페이지 - 회원정보수정 
 def edit_info():
-    print("🔄 학과 테이블 업데이트 점검 중...")
-    fetch_and_update_departments()
+    # print("🔄 학과 테이블 업데이트 점검 중...")
+    # fetch_and_update_departments()
+    if request.method == "POST":
+        nickname = request.form['nickname']
+        univ = request.form['univ']
+        campus = request.form['campus']
+        major = request.form['major']
+
+        cur = mysql.connection.cursor()
+        cur.execute("INSERT INTO users (nickname, univ, campus, major) VALUES (%s, %s, %s, %s)",
+                    (nickname, univ, campus, major))
+        mysql.connection.commit()
+        cur.close()
+
+        return redirect(url_for('main.mypage')) 
+
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+
+    user_id = session['user_id']
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT nickname, univ, college, major FROM users WHERE user_id = %s", (user_id,))
+    user = cur.fetchone()
+    cur.close()
+    return render_template('edit_info.html')
     ...
 
+@main.route('/mypage/edit-pwd', methods=['GET','POST']) #마이페이지 - 비밀번호수정 
+def edit_pwd():
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+
+    user_id = session['user_id']
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT password FROM users WHERE user_id = %s", (user_id,))
+    user = cur.fetchone()
+    cur.close()
+    return render_template('edit_pwd.html')
+
+@main.route('/mypage/edit-pwd/new-pwd', methods=['GET', 'POST'])
+def edit_pwd_new():
+    if request.method == 'POST':
+        user_id = session['user_id']
+        password = request.form['password']  # 암호화는 나중에 추가 가능!
+
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            UPDATE users 
+            SET password = %s 
+            WHERE user_id = %s
+        """, (new_password, user_id))
+        mysql.connection.commit()
+        cur.close()
+
+        return redirect(url_for('main.mypage')) 
+
+    return render_template('edit_pwd_new.html')
 
 @main.route('/menu', methods=['GET','POST'])
 def menu():
@@ -263,7 +325,7 @@ def add_benefit():
         return redirect(url_for('main.login'))
 
     user_id = session['user_id']
-    fetch_and_update_departments() #api연결후
+    # fetch_and_update_departments() #api연결후
 
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
@@ -729,7 +791,7 @@ def allowed_file(filename):
 
 @main.route('/mypage/editor-apply', methods=['GET', 'POST'])
 def editor_apply():
-    fetch_and_update_departments()
+    # fetch_and_update_departments()
     
     if 'user_id' not in session:
         return redirect(url_for('main.login'))
@@ -774,7 +836,6 @@ def editor_apply():
         return redirect(url_for('main.editor_pending'))
 
     return render_template('editor_auth_apply.html')
-
 
 @main.route('/recent', methods=['GET','POST'])
 def recent():

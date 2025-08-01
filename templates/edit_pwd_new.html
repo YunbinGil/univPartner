@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>비밀번호 수정</title>
+    <style>
+        .error {
+            color: red;
+            font-size: 0.9em;
+        }
+
+        .success {
+            color: green;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>비밀번호 수정</h1>
+
+    <label>새 비밀번호: <input type="password" name="password" id="password" required></label>
+    <br>
+    <span id="passwordNote" class="error"></span>
+    <br>
+    <label>새 비밀번호 재입력: <input type="password" id="confirmPassword" required></label>
+    <br>
+    <span id="matchMessage" class="error"></span>
+    <br>
+    <button type="submit">저장</button> <br>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => { //Live Validation (Real-time form check)
+            const pw = document.getElementById('password');
+            const cpw = document.getElementById('confirmPassword');
+            const msg = document.getElementById('matchMessage');
+
+            function checkMatch() {
+                if (cpw.value.length === 0) {
+                    msg.textContent = "";
+                } else if (pw.value === cpw.value) {
+                msg.textContent = "비밀번호가 일치합니다";
+                msg.className = "success";
+                } else {
+                msg.textContent = "비밀번호가 일치하지 않습니다";
+                msg.className = "error";
+                }
+            }
+            pw.addEventListener('input', checkMatch);
+            cpw.addEventListener('input', checkMatch);
+        });
+
+    </script>
+</body>
+
+</html>

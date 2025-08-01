@@ -1,1 +1,5 @@
 venv/
+
+departments.json
+insert_example_partners.py
+partners.csv

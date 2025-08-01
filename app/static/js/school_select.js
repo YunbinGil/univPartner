@@ -1,5 +1,5 @@
 function loadUnivList(targetId = "univ") {
-    fetch('/api/univ-list')
+    return fetch('/api/univ-list')
     .then(res => res.json())
     .then(data => {
         const select = document.getElementById(targetId);
@@ -15,7 +15,7 @@ function loadUnivList(targetId = "univ") {
 
 function updateCollegeOptions(univId = "univ", collegeId = "college") {
     const univ = document.getElementById(univId).value;
-    fetch(`/api/college-list?univ=${encodeURIComponent(univ)}`)
+    return fetch(`/api/college-list?univ=${encodeURIComponent(univ)}`)
     .then(res => res.json())
     .then(data => {
         const select = document.getElementById(collegeId);
@@ -32,7 +32,7 @@ function updateCollegeOptions(univId = "univ", collegeId = "college") {
 function updateMajorOptions(univId = "univ", collegeId = "college", majorId = "major") {
     const univ = document.getElementById(univId).value;
     const college = document.getElementById(collegeId).value;
-    fetch(`/api/major-list?univ=${encodeURIComponent(univ)}&college=${encodeURIComponent(college)}`)
+    return fetch(`/api/major-list?univ=${encodeURIComponent(univ)}&college=${encodeURIComponent(college)}`)
     .then(res => res.json())
     .then(data => {
         const select = document.getElementById(majorId);
