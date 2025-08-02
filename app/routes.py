@@ -243,8 +243,7 @@ def edit_info():
     cur.execute("SELECT nickname, univ, college, major FROM users WHERE user_id = %s", (user_id,))
     user = cur.fetchone()
     cur.close()
-    return render_template('edit_info.html')
-    ...
+    return render_template('edit_info.html', user=user)
 
 @main.route('/mypage/edit-pwd', methods=['GET','POST']) #마이페이지 - 비밀번호수정 
 def edit_pwd():
@@ -256,14 +255,14 @@ def edit_pwd():
     cur.execute("SELECT password FROM users WHERE user_id = %s", (user_id,))
     user = cur.fetchone()
     cur.close()
-    return render_template('edit_pwd.html')
+    return render_template('edit_pwd.html', user=user)
 
 @main.route('/mypage/edit-pwd/new-pwd', methods=['GET', 'POST'])
 def edit_pwd_new():
     if request.method == 'POST':
         user_id = session['user_id']
-        password = request.form['password']  # 암호화는 나중에 추가 가능!
-
+        new_password = request.form['password']  # 암호화는 나중에 추가 가능!
+        print("🔄 새 비밀번호:", new_password)
         cur = mysql.connection.cursor()
         cur.execute("""
             UPDATE users 

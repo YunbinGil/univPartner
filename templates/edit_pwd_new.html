@@ -20,6 +20,7 @@
 <body>
     <h1>비밀번호 수정</h1>
 
+    <form method="POST" action="/mypage/edit-pwd/new-pwd"> 
     <label>새 비밀번호: <input type="password" name="password" id="password" required></label>
     <br>
     <span id="passwordNote" class="error"></span>
@@ -29,6 +30,7 @@
     <span id="matchMessage" class="error"></span>
     <br>
     <button type="submit">저장</button> <br>
+    </form>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => { //Live Validation (Real-time form check)

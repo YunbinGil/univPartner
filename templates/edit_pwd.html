@@ -4,35 +4,25 @@
 <head>
     <meta charset="UTF-8" />
     <title>비밀번호 수정</title>
-    <style>
-        .error {
-            color: red;
-            font-size: 0.9em;
-        }
-
-        .success {
-            color: green;
-            font-size: 0.9em;
-        }
-    </style>
 </head>
 
 <body>
     <h1>비밀번호 수정</h1>
 
-    <label>현재 비밀번호: <input type="password" name="password" id="password" required></label> <br>
-    <span id="pwdMsg"></span>
-    <button type="button" onclick="GoToeditPassword()">확인</button> <br>
-
-    <script>
+    <form>
+        <label>현재 비밀번호: <input type="password" name="password" id="password" required></label> <br>
+        <button type="button" onclick="GoToeditPassword()">확인</button> <br>
+    </form>
+    <script type=text/javascript>
+        const user_pwd = "{{ user.password }}";
         function GoToeditPassword(){
-            const pw = document.getElementById('password');
-            const msg = document.getElementById('pwdMsg');
-            if (pw == user){
+            console.log("user_pwd: " + user_pwd);
+            const pw = document.getElementById('password').value.trim();
+            if (pw == user_pwd){
+                console.log("비밀번호가 일치합니다.");
                 window.location.href = "/mypage/edit-pwd/new-pwd";
             }else{
-                msg.className = error;
-                msg.textContent = '비밇번호가 일치하지 않습니다.'
+                alert("비밀번호가 일치하지 않습니다.");
             }
         }
         
