@@ -40,6 +40,10 @@ while True:
     try:
         data = res.json()
         items = data['response']['body']['items']
+        
+        if isinstance(items, dict):
+            items = [items]
+        
     except Exception as e:
         print("❌ JSON 파싱 실패:", e)
         print("본문 일부:", res.text[:300])
@@ -58,26 +62,32 @@ count = 0
 records = []
 for item in all_items:
     try:
-        univ = item.get('SCHL_NM', '').strip()
-        college = item.get('COLLEGE_NM', '').strip()
-        major = item.get('SCSBJT_NM', '').strip()
-        # campus = item.get('SIGUNGU_NM', '').strip()  # 시군구를 캠퍼스로 간주
-
+        # print(f"DEBUG raw item: {item}")
+        univ = item.get('schlNm', '').strip()
+        college = item.get('collegeNm', '').strip()
+        major = item.get('scsbjtNm', '').strip()
+        # campus = item.get('sggNm', '').strip()  # 시군구를 캠퍼스로 간주
+        # print(f"DEBUG: univ='{univ}', college='{college}', major='{major}'")
+        
         if not (univ and college and major):
-            print("❌ 필수 필드 누락:", univ, major, campus)
+            print("❌ 필수 필드 누락:", univ, college, major)
             continue
 
         if not college:
             college = "단과대학없음"
 
-        records.append((univ, college, major, campus))
+        records.append((univ, college, major))
         count += 1
     except Exception as e:
         print(f"❌ 실패 항목: {item}")
         print("에러:", e)
+        
+cursor.execute("TRUNCATE TABLE departments")
+print("🧹 departments 테이블 초기화 완료")
+
 cursor.executemany("""
-    INSERT INTO departments (univ, college, name, campus)
-    VALUES (%s, %s, %s, %s)
+    INSERT INTO departments (univ, college, major)
+    VALUES (%s, %s, %s)
 """, records)
 
 db.commit()
