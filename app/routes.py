@@ -340,7 +340,7 @@ def add_benefit():
 
     if request.method == 'POST':
         store_name = request.form.get('store_name')
-        address = request.form.get('address')
+        address = request.form.get('address') + " " + request.form.get('address-detail')
         content = request.form.get('content')
         type_ids = request.form.getlist('type_ids')  # 체크박스는 여러 개
         category_id = request.form.get('category')
@@ -499,11 +499,11 @@ def fetch_partners_by_scope():
 def benefit_edit_form():
     return render_template('benefit_edit_form.html')
 
-@main.route('/benefit/update', methods=['POST'])
+@main.route('/benefit/update', methods=['POST', 'DELETE'])
 def update_benefit():
     partner_id = request.form.get('partner_id')
     store_name = request.form.get('store_name')
-    address = request.form.get('address')
+    address = request.form.get('address') + " " + request.form.get('address-detail')
     content = request.form.get('content')
     start_date = request.form.get('start_date')
     end_date = request.form.get('end_date')
@@ -540,6 +540,27 @@ def update_benefit():
         print("❌ 수정 실패:", e)
         mysql.connection.rollback()
         return "서버 오류 발생", 500
+    
+@main.route('/benefit/delete/<int:partner_id>', methods=['DELETE'])
+def delete_benefit(partner_id):
+    
+    if 'user_id' not in session:
+        return jsonify({'error': '로그인이 필요합니다'}), 401
+
+    cur = mysql.connection.cursor()
+    try:
+        cur.execute("DELETE FROM Bookmarks WHERE partner_id = %s", (partner_id,))
+        cur.execute("DELETE FROM PartnerBenefitTypes WHERE partner_id = %s", (partner_id,))
+        cur.execute("DELETE FROM partners WHERE partner_id = %s", (partner_id,))
+        mysql.connection.commit()
+        return jsonify({'status': 'deleted'}), 200
+    except Exception as e:
+        print("❌ 삭제 실패:", e)
+        mysql.connection.rollback()
+        return jsonify({'error': '서버 오류 발생'}), 500
+    finally:
+        cur.close()
+
 
 @main.route('/fetch/scope-info', methods=['GET'])
 def fetch_scope_info():

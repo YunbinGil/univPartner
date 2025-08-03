@@ -5,6 +5,7 @@
     <meta charset="UTF-8" />
     <title>title</title>
     <script src="{{ url_for('static', filename='js/format.js') }}"></script>
+    <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </head>
 
 <body>
@@ -14,40 +15,45 @@
     <h2> 혜택 정보 수정 </h2>
 
     <form action="{{ url_for('main.update_benefit') }}" method="POST" onsubmit="handleSubmit()">
-    <input type="hidden" name="partner_id" id="partner_id">
+        <input type="hidden" name="partner_id" id="partner_id">
 
-    <label>기업명(가게명):</label><br>
-    <input type="text" id="store_name" name="store_name" required><br><br>
+        <label>기업명(가게명):</label><br>
+        <input type="text" id="store_name" name="store_name" required><br><br>
 
-    <label>카테고리:</label><br>
-    <input type="radio" name="category" value=1 id="cat1" required> 음식점
-    <input type="radio" name="category" value=2 id="cat2"> 교육
-    <input type="radio" name="category" value=3 id="cat3"> 건강
-    <input type="radio" name="category" value=4 id="cat4"> 미용
-    <input type="radio" name="category" value=5 id="cat5"> 호프
-    <input type="radio" name="category" value=6 id="cat6"> 엔터
-    <input type="radio" name="category" value=7 id="cat7"> 카페
-    <input type="radio" name="category" value=8 id="cat8"> 의류
-    <input type="radio" name="category" value=9 id="cat9"> 주거
-    <br><br>
+        <label>카테고리:</label><br>
+        <input type="radio" name="category" value=1 id="cat1" required> 음식점
+        <input type="radio" name="category" value=2 id="cat2"> 교육
+        <input type="radio" name="category" value=3 id="cat3"> 건강
+        <input type="radio" name="category" value=4 id="cat4"> 미용
+        <input type="radio" name="category" value=5 id="cat5"> 호프
+        <input type="radio" name="category" value=6 id="cat6"> 엔터
+        <input type="radio" name="category" value=7 id="cat7"> 카페
+        <input type="radio" name="category" value=8 id="cat8"> 의류
+        <input type="radio" name="category" value=9 id="cat9"> 주거
+        <br><br>
 
-    {% for btype in benefit_types %}
-    <input type="checkbox" name="type_ids" value="{{ btype.type_id }}" data-name="{{ btype.name }}"> {{ btype.name }}
-    {% endfor %}
+        {% for btype in benefit_types %}
+        <input type="checkbox" name="type_ids" value="{{ btype.type_id }}" data-name="{{ btype.name }}"> {{ btype.name
+        }}
+        {% endfor %}
 
-    <label>위치 주소:</label><br>
-    <input type="text" id="address" name="address"><br><br>
+        <label>위치 주소:</label><br>
+        <input type="text" id="address" name="address" readonly required>
+        <button type="button" onclick="execDaumPostcode()">주소 검색</button><br>
+        <input type="text" id="address-detail" name="address-detail" placeholder="상세 주소를 입력하세요"><br><br>
 
-    <label>혜택 내용:</label><br>
-    <textarea id="content" name="content" required></textarea><br><br>
 
-    <label>시작일:</label><br>
-    <input type="date" id="start_date" name="start_date" required><br><br>
+        <label>혜택 내용:</label><br>
+        <textarea id="content" name="content" required></textarea><br><br>
 
-    <label>종료일:</label><br>
-    <input type="date" id="end_date" name="end_date" required><br><br>
+        <label>시작일:</label><br>
+        <input type="date" id="start_date" name="start_date" required><br><br>
 
-    <button type="submit" onclick="sessionStorage.removeItem('editingPartner')">수정완료</button>
+        <label>종료일:</label><br>
+        <input type="date" id="end_date" name="end_date" required><br><br>
+
+        <button type="submit" onclick="sessionStorage.removeItem('editingPartner')">수정완료</button>
+        <button type="button" onclick="removeBenefit()">혜택 정보 삭제</button>
 
     </form>
     <script>
@@ -83,6 +89,39 @@
             if (categoryRadio) categoryRadio.checked = true;
 
         });
+
+        function execDaumPostcode() {
+            new daum.Postcode({
+                oncomplete: function (data) {
+                    let fullAddr = data.address; // 도로명 주소
+                    document.getElementById('address').value = fullAddr;
+                }
+            }).open();
+        }
+
+        function removeBenefit() {
+            if (confirm("정말로 이 혜택 정보를 삭제하시겠습니까?")) {
+                const partnerData = sessionStorage.getItem('editingPartner');
+                if (!partnerData) {
+                    alert("수정할 혜택 정보가 없습니다.");
+                    return;
+                }
+
+                const partner = JSON.parse(partnerData);
+                const partnerId = partner.partner_id;
+                fetch(`/benefit/delete/${partnerId}`, {
+                    method: 'DELETE'
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            alert("혜택 정보가 삭제되었습니다.");
+                            window.location.href = "/benefit/edit"; // 목록 페이지로 이동
+                        } else {
+                            alert("삭제에 실패했습니다. 나중에 다시 시도해주세요.");
+                        }
+                    });
+            }
+        }
     </script>
 
 </body>
