@@ -221,15 +221,19 @@ def major_list():
 def edit_info():
     # print("🔄 학과 테이블 업데이트 점검 중...")
     # fetch_and_update_departments()
+    user_id=session['user_id']
+    
     if request.method == "POST":
         nickname = request.form['nickname']
         univ = request.form['univ']
-        campus = request.form['campus']
+        college = request.form['college']
         major = request.form['major']
 
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO users (nickname, univ, campus, major) VALUES (%s, %s, %s, %s)",
-                    (nickname, univ, campus, major))
+        cur.execute(
+            "UPDATE users SET nickname=%s, univ=%s, college=%s, major=%s WHERE user_id = %s",
+            (nickname, univ, college, major, user_id)
+        )
         mysql.connection.commit()
         cur.close()
 
@@ -238,7 +242,6 @@ def edit_info():
     if 'user_id' not in session:
         return redirect(url_for('main.login'))
 
-    user_id = session['user_id']
     cur = mysql.connection.cursor()
     cur.execute("SELECT nickname, univ, college, major FROM users WHERE user_id = %s", (user_id,))
     user = cur.fetchone()
