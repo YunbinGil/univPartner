@@ -1,14 +1,27 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8" />
     <title>마이페이지</title>
     <style>
-        .error { color: red; font-size: 0.9em; }
-        .success { color: green; font-size: 0.9em; }
-        .gray { color: gray; font-size: 0.9em; }
+        .error {
+            color: red;
+            font-size: 0.9em;
+        }
+
+        .success {
+            color: green;
+            font-size: 0.9em;
+        }
+
+        .gray {
+            color: gray;
+            font-size: 0.9em;
+        }
     </style>
 </head>
+
 <body>
     <h1>마이페이지</h1>
 
@@ -18,8 +31,9 @@
     <a id="auth-button"><button type="button">편집자 인증 받기</button></a> <br>
     <span class="gray">과거인증내역: <span id="auth-history"></span></span>
     <br><br>
-    <button onclick="window.location.href='{{ url_for('main.logout') }}'">로그아웃</button>
-
+    <form action="{{ url_for('main.logout') }}" method="get">
+        <button type="submit">로그아웃</button>
+    </form>
     <script>
         fetch('/fetch/editor-info')
             .then(response => response.json())
@@ -29,25 +43,25 @@
 
                 if (data.error) {
                     authHistory.textContent = '없음';
-                    authHistory.className='error';
+                    authHistory.className = 'error';
                     authButton.href = '/mypage/editor-apply';
                 } else {
-                    if(data.status === 'approved'){
+                    if (data.status === 'approved') {
                         authHistory.textContent = '이미 인증됨';
                         authHistory.textContent += ` (${data.univ} ${data.college} ${data.major})`;
-                        authHistory.className='success';
+                        authHistory.className = 'success';
                         authButton.href = '/mypage/editor-approved';
                     }
-                    else if(data.status === 'pending') {
+                    else if (data.status === 'pending') {
                         authHistory.textContent = '승인 대기 중';
                         authHistory.textContent += ` (${data.univ} ${data.college} ${data.major})`;
-                        authHistory.className='success';
+                        authHistory.className = 'success';
                         authButton.href = '/mypage/editor-pending';
                     }
-                    else if(data.status === 'rejected') {
+                    else if (data.status === 'rejected') {
                         authHistory.textContent = '인증 거절됨';
                         authHistory.textContent += ` (${data.univ} ${data.college} ${data.major})`;
-                        authHistory.className='error';
+                        authHistory.className = 'error';
                         authButton.href = '/mypage/editor-apply';
                     }
                 }
@@ -55,4 +69,5 @@
             .catch(error => console.error('편집자 정보 로드 실패:', error));
     </script>
 </body>
+
 </html>
