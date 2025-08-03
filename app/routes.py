@@ -98,6 +98,11 @@ def login():
 
     return render_template('login.html')
 
+@main.route('/logout')
+def logout():
+    session.pop('user_id', None) #또는 session.clear() #모든 세션 정보 삭제
+    return redirect(url_for('main.login'))
+
 @main.route('/check-nickname')
 def check_nickname():
     nickname = request.args.get('nickname')

@@ -17,6 +17,8 @@
     <br>
     <a id="auth-button"><button type="button">편집자 인증 받기</button></a> <br>
     <span class="gray">과거인증내역: <span id="auth-history"></span></span>
+    <br><br>
+    <button onclick="window.location.href='{{ url_for('main.logout') }}'">로그아웃</button>
 
     <script>
         fetch('/fetch/editor-info')
