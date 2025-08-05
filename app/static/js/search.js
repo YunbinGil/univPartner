@@ -102,6 +102,12 @@ function applyFilters() {
 
     closeModal();
 
+    // 👇 여기 부분은 페이지에 따라 커스터마이즈 필요
+    if (typeof loadMarkers === 'function') {
+        loadMarkers();  // 💡 지도 페이지일 경우
+    } else {
+        GoSearch();     // 🔎 검색 페이지일 경우
+    }
     alert("적용된 조건:\n" + JSON.stringify({
         scope: [...selectedScopes],
         type_ids: [typeIds],
@@ -144,4 +150,32 @@ function GoSearch() {
 
     document.body.appendChild(form);
     form.submit();
+}
+
+function insertConditionModal() {
+    const modalHtml = `
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal()">
+        <div class="modal" id="conditionModal" onclick="event.stopPropagation()">
+            <div class="modal-header">상세조건 설정</div>
+
+            <div class="filter-group">
+                <span>제휴 범위 (복수 선택 가능)<span id="scope-count">(0/3)</span></span><br>
+                <div id="scope-buttons"></div>
+            </div>
+
+            <div class="filter-group">
+                <span>혜택 형태 (복수 선택 가능)<span id="type-count">(0/4)</span></span><br>
+                <div id="type-buttons"></div>
+            </div>
+
+            <div class="filter-group">
+                <span>카테고리 (1개 선택)</span><br>
+                <div id="category-buttons"></div>
+            </div>
+
+            <button onclick="resetFilters()">초기화</button>
+            <button onclick="applyFilters()">적용하기</button>
+        </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
 }

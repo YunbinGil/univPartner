@@ -5,76 +5,8 @@
     <meta charset="UTF-8" />
     <title>홈이셔</title>
     <script src="{{ url_for('static', filename='js/search.js') }}"></script>
-    <style>
-        html,
-        body {
-            margin: 20px;
-            padding: 20px;
-            overflow-x: hidden;
-        }
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/condition_modal.css') }}">
 
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 999;
-        }
-
-        .modal {
-            text-align: center;
-            position: fixed;
-            bottom: -100%;
-            left: 0;
-            width: 100%;
-            background-color: white;
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
-            padding: 20px;
-            transition: bottom 0.5s ease-out;
-            box-sizing: border-box;
-        }
-
-        .modal.active {
-            bottom: 0;
-        }
-
-        .modal-header {
-            font-weight: bold;
-            margin-bottom: 10px;
-            font-size: 18px;
-        }
-
-        .toggle-btn {
-            margin: 5px;
-            padding: 6px 10px;
-            border: 1px solid #aaa;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        .toggle-btn.active {
-            background-color: #007bff;
-            color: white;
-        }
-
-        .filter-group {
-            margin-bottom: 20px;
-        }
-
-        .search-bar {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            justify-content: center;
-            margin: 20px 0;
-        }
-    </style>
 </head>
 
 <body>
@@ -101,28 +33,27 @@
     </div>
 
 
-    <div class="modal-overlay" id="modalOverlay" onclick="closeModal()">
-        <div class="modal" id="conditionModal" onclick="event.stopPropagation()">
-            <div class="modal-header">상세조건 설정</div>
+    <div class="modal" id="conditionModal" onclick="event.stopPropagation()">
+        <div class="modal-header">상세조건 설정</div>
 
-            <div class="filter-group">
-                <span>제휴 범위 (복수 선택 가능)</span><span id="scope-count">(0/3)</span><br>
-                <div id="scope-buttons"></div>
-            </div>
-
-            <div class="filter-group">
-                <span>혜택 형태 (복수 선택 가능) <span id="type-count">(0/4)</span> </span><br>
-                <div id="type-buttons"></div>
-            </div>
-
-            <div class="filter-group">
-                <span>카테고리 (1개 선택)</span><br>
-                <div id="category-buttons"></div>
-            </div>
-
-            <button onclick="resetFilters()">초기화</button>
-            <button onclick="applyFilters()">적용하기</button>
+        <div class="filter-group">
+            <span>제휴 범위 (복수 선택 가능)</span><span id="scope-count">(0/3)</span><br>
+            <div id="scope-buttons"></div>
         </div>
+
+        <div class="filter-group">
+            <span>혜택 형태 (복수 선택 가능) <span id="type-count">(0/4)</span> </span><br>
+            <div id="type-buttons"></div>
+        </div>
+
+        <div class="filter-group">
+            <span>카테고리 (1개 선택)</span><br>
+            <div id="category-buttons"></div>
+        </div>
+
+        <button onclick="resetFilters()">초기화</button>
+        <button onclick="applyFilters()">적용하기</button>
+
     </div>
 
     <script>
@@ -142,9 +73,13 @@
                 });
             });
 
-        document.addEventListener("DOMContentLoaded", resetFilters)
+        document.addEventListener("DOMContentLoaded", () => {
+            insertConditionModal();
+            resetFilters();
 
-        
+        });
+
+
     </script>
 
 </body>
