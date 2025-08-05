@@ -326,6 +326,28 @@ def serialize_editor(editor):
             result[key] = val
     return result
 
+def get_coords_from_address(address):
+    REST_API_KEY = "2a36e67d1977c03c6ead684ec514ffa0"
+    res = requests.get(
+        "https://dapi.kakao.com/v2/local/search/address.json",
+        headers={"Authorization": f"KakaoAK {REST_API_KEY}"},
+        params={"query": address}
+    )
+    
+    try:
+        result = res.json()
+        if 'documents' in result and result['documents']:
+            lat = result['documents'][0]['y']
+            lng = result['documents'][0]['x']
+            return lat, lng
+        else:
+            print("❌ 좌표 검색 결과 없음:", result)
+            return None, None
+    except Exception as e:
+        print("❌ JSON 파싱 실패:", e)
+        print(res.text[:300])
+        return None, None
+    
 @main.route('/benefit/add', methods=['GET','POST'])
 def add_benefit():
     if 'user_id' not in session:
@@ -341,6 +363,7 @@ def add_benefit():
     if request.method == 'POST':
         store_name = request.form.get('store_name')
         address = request.form.get('address') + " " + request.form.get('address-detail')
+        lat, lng = get_coords_from_address(address)
         content = request.form.get('content')
         type_ids = request.form.getlist('type_ids')  # 체크박스는 여러 개
         category_id = request.form.get('category')
@@ -390,9 +413,9 @@ def add_benefit():
             # ✅ 1. partners 테이블에 insert
             cur.execute("""
                 INSERT INTO partners 
-                (name, address, content, scope, start_date, end_date, category_id, created_by_user_id)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (store_name, address, content, scopeStr, start_date, end_date, category_id, user_id))
+                (name, address, content, scope, start_date, end_date, category_id, created_by_user_id, longitude, latitude)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (store_name, address, content, scopeStr, start_date, end_date, category_id, user_id, lng, lat))
             mysql.connection.commit()
 
             partner_id = cur.lastrowid
@@ -504,6 +527,7 @@ def update_benefit():
     partner_id = request.form.get('partner_id')
     store_name = request.form.get('store_name')
     address = request.form.get('address') + " " + request.form.get('address-detail')
+    lat, lng = get_coords_from_address(address)
     content = request.form.get('content')
     start_date = request.form.get('start_date')
     end_date = request.form.get('end_date')
@@ -520,9 +544,10 @@ def update_benefit():
         cur.execute("""
             UPDATE partners
             SET name = %s, address = %s, content = %s,
-                start_date = %s, end_date = %s, category_id = %s
+                start_date = %s, end_date = %s, category_id = %s,
+                longitude = %s, latitude = %s
             WHERE partner_id = %s
-        """, (store_name, address, content, start_date, end_date, category_id, partner_id))
+        """, (store_name, address, content, start_date, end_date, category_id, lng, lat, partner_id))
 
         # ✅ 연결 테이블 싹 지우고 다시 넣기
         cur.execute("DELETE FROM PartnerBenefitTypes WHERE partner_id = %s", (partner_id,))
