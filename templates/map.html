@@ -1,10 +1,27 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="utf-8">
     <title>제휴맵</title>
+    <script type="text/javascript"
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=321d2f3fb273fa62709c71930054828d&libraries=services"></script>
 </head>
+
 <body>
-    <h1>제휴맵</h1>
+    <h1>제휴 혜택 맵</h1>
+    <div id="map" style="width:100%;height:600px;"></div>
+
+    <script>
+        window.onload = function () {
+            const mapContainer = document.getElementById('map');
+            const mapOption = {
+                center: new kakao.maps.LatLng(37.566826, 126.9786567), // 디폴트: 서울
+                level: 3
+            };
+            const map = new kakao.maps.Map(mapContainer, mapOption);
+        }
+    </script>
 </body>
+
 </html>
