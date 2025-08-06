@@ -162,7 +162,7 @@
                             box-shadow: 0 2px 6px rgba(0,0,0,0.2);
                             max-width: 280px;
                         ">
-                            <button onclick="this.parentElement.parentElement.style.display='none'"
+                            <button onclick="closeDetailOverlay(${p.partner_id})"
                                 style="position:absolute; top:8px; right:8px;">✖</button>
                             <div><strong>${p.name}</strong></div>
                             <div>${p.content || '내용 없음'}</div>
@@ -182,28 +182,32 @@
                     });
 
                 })
-            }
+        }
 
-            function searchOnMap() {
-                const keyword = document.getElementById('mapSearchInput').value.trim();
-                sessionStorage.setItem('searchWord', keyword);
-                loadMarkers(keyword);
-            }
+        function searchOnMap() {
+            const keyword = document.getElementById('mapSearchInput').value.trim();
+            sessionStorage.setItem('searchWord', keyword);
+            loadMarkers(keyword);
+        }
 
 
-            document.addEventListener("DOMContentLoaded", () => {
-                insertConditionModal();
-                resetFilters();
-                initMap();
-            });
+        document.addEventListener("DOMContentLoaded", () => {
+            insertConditionModal();
+            resetFilters();
+            initMap();
+        });
 
-            function showDetail(partnerId) {
-                // 먼저 모든 오버레이 닫기
-                Object.values(window.detailOverlayMap).forEach(o => o.setMap(null));
+        function showDetail(partnerId) {
+            // 먼저 모든 오버레이 닫기
+            Object.values(window.detailOverlayMap).forEach(o => o.setMap(null));
 
-                const overlay = window.detailOverlayMap[partnerId];
-                if (overlay) overlay.setMap(map);
-            }
+            const overlay = window.detailOverlayMap[partnerId];
+            if (overlay) overlay.setMap(map);
+        }
+        function closeDetailOverlay(partnerId) {
+            const overlay = window.detailOverlayMap[partnerId];
+            if (overlay) overlay.setMap(null);
+        }
     </script>
 </body>
 
