@@ -4,23 +4,155 @@
 <head>
     <meta charset="utf-8">
     <title>제휴맵</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        #map {
+            width: 100%;
+            height: 600px;
+        }
+
+        .overlay-controls {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 6px;
+        }
+
+        .search-bar input {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            width: 200px;
+        }
+
+        .search-bar button {
+            padding: 5px 10px;
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/condition_modal.css') }}">
     <script type="text/javascript"
         src="//dapi.kakao.com/v2/maps/sdk.js?appkey=321d2f3fb273fa62709c71930054828d&libraries=services"></script>
+    <script src="{{ url_for('static', filename='js/search.js') }}"></script>
+
 </head>
 
 <body>
-    <h1>제휴 혜택 맵</h1>
-    <div id="map" style="width:100%;height:600px;"></div>
+    
+
+    <div class="overlay-controls">
+        <h3>제휴 혜택 맵</h1>
+        <div class="search-bar">
+            <input type="text" id="mapSearchInput" placeholder="가게명 또는 혜택 검색..." />
+            <button onclick="searchOnMap()">검색</button>
+        </div>
+         <button onclick="openModal()">상세조건</button>
+    </div>
+
+    <div id="map"></div>
+
+    <div style="text-align:center; margin-top: 10px;">
+        <a href="/map/list"><button>혜택 목록 보기</button></a>
+    </div>
 
     <script>
-        window.onload = function () {
-            const mapContainer = document.getElementById('map');
-            const mapOption = {
-                center: new kakao.maps.LatLng(37.566826, 126.9786567), // 디폴트: 서울
-                level: 3
-            };
-            const map = new kakao.maps.Map(mapContainer, mapOption);
+        const categoryMarkerStyle = {
+            1: { color: 'red', emoji: '🍔' },     // 음식점
+            2: { color: 'blue', emoji: '📚' },    // 교육
+            3: { color: 'green', emoji: '💊' },   // 건강
+            4: { color: 'pink', emoji: '💄' },    // 미용
+            5: { color: 'purple', emoji: '🍺' },  // 호프
+            6: { color: 'orange', emoji: '🎬' },  // 엔터
+            7: { color: 'brown', emoji: '☕' },   // 카페
+            8: { color: 'black', emoji: '👕' },   // 의류
+            9: { color: 'gray', emoji: '🏠' },    // 주거
+        };
+
+        let map, overlays = [];
+
+        function initMap() {
+            fetch('/map/init-location')
+                .then(res => res.json())
+                .then(pos => {
+                    const center = (pos.lat && pos.lng)
+                        ? new kakao.maps.LatLng(pos.lat, pos.lng)
+                        : new kakao.maps.LatLng(37.5665, 126.9780);  // fallback: 서울시청
+
+                    const options = {
+                        center: center,
+                        level: 4
+                    };
+
+                    map = new kakao.maps.Map(document.getElementById('map'), options);
+                    loadMarkers(); // 마커 로딩
+                });
         }
+
+        function loadMarkers(keyword = '') {
+            // 기존 마커 지우기
+            overlays.forEach(o => o.setMap(null));
+            overlays = [];
+
+            fetch('/map/benefits')  // Flask에서 좌표, name, category_id 제공
+                .then(res => res.json())
+                .then(data => {
+                    const filtered = keyword
+                        ? data.filter(p => p.name.includes(keyword) || p.content?.includes(keyword))
+                        : data;
+
+                    filtered.forEach(p => {
+                        const pos = new kakao.maps.LatLng(p.lat, p.lng);
+                        const style = categoryMarkerStyle[p.category_id] || { color: 'gray', emoji: '❓' };
+
+                        const content = `
+                            <div style="padding:2px 5px; background:${style.color}; border-radius:5px; color:white;">
+                                ${style.emoji} ${p.name}
+                            </div>
+                        `;
+                        const overlay = new kakao.maps.CustomOverlay({
+                            content,
+                            position: pos,
+                            yAnchor: 1
+                        });
+                        overlay.setMap(map);
+                        overlays.push(overlay);
+                    });
+                });
+        }
+
+        function searchOnMap() {
+            const keyword = document.getElementById('mapSearchInput').value.trim();
+            sessionStorage.setItem('searchWord', keyword);
+            loadMarkers(keyword);
+        }
+
+
+        document.addEventListener("DOMContentLoaded", () => {
+            insertConditionModal();
+            resetFilters();
+            initMap();
+        });
+
     </script>
 </body>
 

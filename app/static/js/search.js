@@ -1,3 +1,13 @@
+let selectedScopes = new Set();
+let selectedTypes = new Set();
+let selectedCategory = null;
+
+let typeOptions = ["할인", "정률", "이벤트", "사내기 혜택"];  // 예시
+let categoryOptions = ["건강", "교육", "엔터", "미용", "의류", "주거", "카페", "음식점", "호프"];
+let benefitTypeMap = {
+  "할인": 1, "정률": 2, "이벤트": 3, "사내기 혜택": 4
+};
+
 function openModal() {
     document.getElementById('modalOverlay').style.display = 'block';
     document.getElementById('conditionModal').classList.add('active');

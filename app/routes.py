@@ -12,6 +12,8 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
 #API_BASE_URL = 'http://api.data.go.kr/openapi/tn_pubr_public_univ_major_api'
 API_KEY = 'aZcI7QFc9yUfWvmODptQxI2SMyDwOsf8i30dGPKLjvbUO7Dcj67luMuga0d9hL4hS9EKWwS9GxDnxq7O%2BtBM9w%3D%3D'
 
+KAKAO_REST_API_KEY = '2a36e67d1977c03c6ead684ec514ffa0'  # 카카오 REST API 키
+
 main = Blueprint('main', __name__, template_folder=os.path.join(os.path.dirname(__file__), '../templates'))
 #BluePrint = 일종의 "라우터 묶음.
 #여러개의 라우트를 그룹으로 만들어서 앱에 붙일 수 ㅇㅇ
@@ -327,10 +329,9 @@ def serialize_editor(editor):
     return result
 
 def get_coords_from_address(address):
-    REST_API_KEY = "2a36e67d1977c03c6ead684ec514ffa0"
     res = requests.get(
         "https://dapi.kakao.com/v2/local/search/address.json",
-        headers={"Authorization": f"KakaoAK {REST_API_KEY}"},
+        headers={"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"},
         params={"query": address}
     )
     
@@ -692,8 +693,98 @@ def search():
     return render_template('search.html', keyword=keyword)
 
 @main.route('/map', methods=['GET','POST'])
-def map():
+def map_show():
     return render_template('map.html')
+
+@main.route('/map/benefits')
+def map_benefits():
+    try:
+        cur = mysql.connection.cursor()
+
+        query = """
+            SELECT 
+                p.partner_id,
+                p.name,
+                p.content,
+                p.scope,
+                p.latitude,
+                p.longitude,
+                p.category_id,
+                bc.name AS category_name,
+                GROUP_CONCAT(bt.type_id) AS benefit_type_ids
+            FROM partners p
+            LEFT JOIN BenefitCategories bc ON p.category_id = bc.category_id
+            LEFT JOIN PartnerBenefitTypes pbt ON p.partner_id = pbt.partner_id
+            LEFT JOIN BenefitTypes bt ON pbt.type_id = bt.type_id
+            WHERE p.latitude IS NOT NULL AND p.longitude IS NOT NULL
+            GROUP BY p.partner_id
+        """
+
+        cur.execute(query)
+        colnames = [desc[0] for desc in cur.description]
+        rows = cur.fetchall()
+        # for row in rows:
+        #     print("🔥 raw row:", row)
+        cur.close()
+
+        # 튜플 → dict 변환
+        results = []
+        for r in rows:
+            raw_ids = r.get('benefit_type_ids', '')
+            if raw_ids and raw_ids != 'benefit_type_ids':
+                try:
+                    r['benefit_type_ids'] = list(map(int, raw_ids.split(',')))
+                except Exception as parse_err:
+                    print("❌ benefit_type_ids 파싱 실패:", raw_ids)
+                    r['benefit_type_ids'] = []
+            else:
+                r['benefit_type_ids'] = []
+
+            r['lat'] = r.pop('latitude', None)
+            r['lng'] = r.pop('longitude', None)
+    
+            results.append(r)
+        print("🔍 /map/benefits 쿼리 결과:", results)
+        return jsonify(results)
+
+    except Exception as e:
+        print("❌ /map/benefits 라우트 에러:", e)
+        return jsonify({'error': '서버 오류 발생'}), 500
+
+
+@main.route('/map/init-location')
+def map_init_location():
+    if 'user_id' not in session:
+        return jsonify({'error': '로그인 필요'}), 401
+
+    user_id = session['user_id']
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT univ FROM users WHERE user_id = %s", (user_id,))
+    user = cur.fetchone()
+    cur.close()
+
+    if not user:
+        return jsonify({'error': '유저 정보 없음'}), 404
+
+    univ = user['univ']
+
+    # 💡 대학교명 → 위도/경도 변환
+    
+
+    res = requests.get(
+        "https://dapi.kakao.com/v2/local/search/keyword.json",
+        headers={"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"},
+        params={"query": univ}
+    )
+
+    result = res.json()
+    if 'documents' in result and result['documents']:
+        lat = float(result['documents'][0]['y'])
+        lng = float(result['documents'][0]['x'])
+        return jsonify({'lat': lat, 'lng': lng})
+    else:
+        return jsonify({'error': '위치 정보 없음'}), 404
+
 
 @main.route('/bookmark')
 def bookmark():
@@ -893,3 +984,5 @@ def editor_apply():
 @main.route('/recent', methods=['GET','POST'])
 def recent():
     return render_template('recent.html')
+
+
