@@ -31,7 +31,7 @@
             padding: 10px;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-            
+
         }
 
         .search-bar {
@@ -58,15 +58,15 @@
 </head>
 
 <body>
-    
+
 
     <div class="overlay-controls">
         <h3>제휴 혜택 맵</h1>
-        <div class="search-bar">
-            <input type="text" id="mapSearchInput" placeholder="가게명 또는 혜택 검색..." />
-            <button onclick="searchOnMap()">검색</button>
-        </div>
-         <button onclick="openModal()">상세조건</button>
+            <div class="search-bar">
+                <input type="text" id="mapSearchInput" placeholder="가게명 또는 혜택 검색..." />
+                <button onclick="searchOnMap()">검색</button>
+            </div>
+            <button onclick="openModal()">상세조건</button>
     </div>
 
     <div id="map"></div>
@@ -112,6 +112,7 @@
             // 기존 마커 지우기
             overlays.forEach(o => o.setMap(null));
             overlays = [];
+            detailOverlays = [];
 
             fetch('/map/benefits')  // Flask에서 좌표, name, category_id 제공
                 .then(res => res.json())
@@ -124,35 +125,85 @@
                         const pos = new kakao.maps.LatLng(p.lat, p.lng);
                         const style = categoryMarkerStyle[p.category_id] || { color: 'gray', emoji: '❓' };
 
-                        const content = `
-                            <div style="padding:2px 5px; background:${style.color}; border-radius:5px; color:white;">
-                                ${style.emoji} ${p.name}
-                            </div>
-                        `;
-                        const overlay = new kakao.maps.CustomOverlay({
-                            content,
+                        // 🔥 이 div에 직접 클릭 이벤트 걸어줌!
+                        const markerHtml = `
+                            <div class="custom-marker" onclick="showDetail(${p.partner_id})"
+                                style="
+                                background: ${style.color};
+                                color: white;
+                                padding: 4px 6px;
+                                border-radius: 6px;
+                                font-size: 14px;
+                                cursor: pointer;
+                                white-space: nowrap;
+                                box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+                            ">
+                            ${style.emoji} ${p.name}
+                        </div>
+                    `;
+
+                        const markerOverlay = new kakao.maps.CustomOverlay({
+                            content: markerHtml,
                             position: pos,
                             yAnchor: 1
                         });
-                        overlay.setMap(map);
-                        overlays.push(overlay);
+
+                        markerOverlay.setMap(map);
+                        overlays.push(markerOverlay);
+
+                        // 상세 오버레이는 따로 저장
+                        const detailHtml = `
+                        <div class="detail-overlay" style="
+                            position: relative;
+                            background: white;
+                            border: 1px solid #ccc;
+                            padding: 12px;
+                            border-radius: 10px;
+                            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+                            max-width: 280px;
+                        ">
+                            <button onclick="this.parentElement.parentElement.style.display='none'"
+                                style="position:absolute; top:8px; right:8px;">✖</button>
+                            <div><strong>${p.name}</strong></div>
+                            <div>${p.content || '내용 없음'}</div>
+                            <div style="font-size: 12px; color: gray;">${p.scope}</div>
+                        </div>
+                   `;
+
+                        const detailOverlay = new kakao.maps.CustomOverlay({
+                            content: detailHtml,
+                            position: pos,
+                            yAnchor: 1
+                        });
+
+                        // 파트너 ID → 오버레이 매핑 저장
+                        if (!window.detailOverlayMap) window.detailOverlayMap = {};
+                        window.detailOverlayMap[p.partner_id] = detailOverlay;
                     });
-                });
-        }
 
-        function searchOnMap() {
-            const keyword = document.getElementById('mapSearchInput').value.trim();
-            sessionStorage.setItem('searchWord', keyword);
-            loadMarkers(keyword);
-        }
+                })
+            }
+
+            function searchOnMap() {
+                const keyword = document.getElementById('mapSearchInput').value.trim();
+                sessionStorage.setItem('searchWord', keyword);
+                loadMarkers(keyword);
+            }
 
 
-        document.addEventListener("DOMContentLoaded", () => {
-            insertConditionModal();
-            resetFilters();
-            initMap();
-        });
+            document.addEventListener("DOMContentLoaded", () => {
+                insertConditionModal();
+                resetFilters();
+                initMap();
+            });
 
+            function showDetail(partnerId) {
+                // 먼저 모든 오버레이 닫기
+                Object.values(window.detailOverlayMap).forEach(o => o.setMap(null));
+
+                const overlay = window.detailOverlayMap[partnerId];
+                if (overlay) overlay.setMap(map);
+            }
     </script>
 </body>
 
