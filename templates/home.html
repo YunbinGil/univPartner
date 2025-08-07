@@ -57,14 +57,6 @@
     </div>
 
     <script>
-        const typeOptions = ['할인', '제공', '이벤트', '새내기 혜택'];
-        const categoryOptions = ['건강', '교육', '엔터', '미용', '의류', '주거', '카페', '음식점', '호프'];
-
-        let selectedTypes = new Set();
-        let selectedCategory = null;
-        let selectedScopes = new Set();
-
-        const benefitTypeMap = {};
         fetch('/benefit/types')
             .then(res => res.json())
             .then(data => {
@@ -76,7 +68,6 @@
         document.addEventListener("DOMContentLoaded", () => {
             insertConditionModal();
             resetFilters();
-
         });
 
 

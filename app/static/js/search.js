@@ -5,7 +5,7 @@ let selectedCategory = null;
 let typeOptions = ["할인", "제공", "이벤트", "새내기 혜택"];  // 예시
 let categoryOptions = ["건강", "교육", "엔터", "미용", "의류", "주거", "카페", "음식점", "호프"];
 let benefitTypeMap = {
-  "할인": 1, "제공": 2, "이벤트": 3, "새내기 혜택": 4
+    "할인": 1, "제공": 2, "이벤트": 3, "새내기 혜택": 4
 };
 
 function openModal() {
@@ -32,6 +32,11 @@ function renderScopeButtons(scopeData) {
         const btn = document.createElement("button");
         btn.className = "toggle-btn";
         btn.textContent = option;
+
+        if (selectedScopes.has(option)) {
+            btn.classList.add("active");
+        }
+
         btn.onclick = () => {
             if (selectedScopes.has(option)) {
                 selectedScopes.delete(option);
@@ -44,6 +49,8 @@ function renderScopeButtons(scopeData) {
         };
         container.appendChild(btn);
     });
+
+    document.getElementById('scope-count').textContent = `(${selectedScopes.size}/3)`;
 }
 
 function createToggleButtons(containerId, options, mode, onSelect, countSpanId = null) {
@@ -190,3 +197,28 @@ function insertConditionModal() {
     </div>`;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
+
+function restoreFiltersFromSession() {
+    // 세션에서 불러오기
+    const scopes = JSON.parse(sessionStorage.getItem('selectedScopes') || "[]");
+    const typeIds = JSON.parse(sessionStorage.getItem('selectedTypeIds') || "[]");
+    const category = sessionStorage.getItem('selectedCategory');
+
+    selectedScopes = new Set(scopes);
+    selectedTypes = new Set(typeOptions.filter(name => typeIds.includes(benefitTypeMap[name])));
+    selectedCategory = category;
+
+    // 다시 렌더링
+    createToggleButtons('type-buttons', typeOptions, "multi", null, "type-count");
+    createToggleButtons('category-buttons', categoryOptions, "single", val => selectedCategory = val);
+
+    // 범위 scope 버튼 다시
+    fetch('/fetch/scope-info')
+        .then(res => res.json())
+        .then(data => {
+            if (!data.error) {
+                renderScopeButtons(data); // 얘가 selectedScopes를 보고 버튼 active 시켜줘야 함
+            }
+        });
+}
+

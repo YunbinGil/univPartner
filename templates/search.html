@@ -77,6 +77,14 @@
             justify-content: center;
             margin: 20px 0;
         }
+
+        .benefit-item {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
     </style>
     <script src="{{ url_for('static', filename='js/format.js') }}"></script>
     <script src="{{ url_for('static', filename='js/search.js') }}"></script>
@@ -152,15 +160,16 @@
     </div>
 
     <script>
-        // 초기화
-        const typeOptions = ['할인', '제공', '이벤트', '새내기 혜택'];
-        const categoryOptions = ['건강', '교육', '엔터', '미용', '의류', '주거', '카페', '음식점', '호프'];
+        // // 초기화
+        // const typeOptions = ['할인', '제공', '이벤트', '새내기 혜택'];
+        // const categoryOptions = ['건강', '교육', '엔터', '미용', '의류', '주거', '카페', '음식점', '호프'];
 
-        let selectedTypes = new Set();
-        let selectedCategory = null;
-        let selectedScopes = new Set();
+        // let selectedTypes = new Set();
+        // let selectedCategory = null;
+        // let selectedScopes = new Set();
 
-        const benefitTypeMap = {};
+        // const benefitTypeMap = {};
+        let benefitTypeMap_str = {"할인": 1, "제공": 2, "이벤트": 3, "새내기 혜택": 4};
         fetch('/benefit/types')
             .then(res => res.json())
             .then(data => {
@@ -168,8 +177,6 @@
                     benefitTypeMap[t.name] = t.type_id;
                 });
             });
-
-        document.addEventListener("DOMContentLoaded", resetFilters)
 
         document.getElementById('partnerBox').addEventListener('click', function (e) {
             if (e.target.classList.contains('bookmark-btn')) {
@@ -185,6 +192,9 @@
         const searchTarget = sessionStorage.getItem('target') || '';
 
         document.addEventListener("DOMContentLoaded", () => {
+            insertConditionModal();        // 모달 삽입
+            restoreFiltersFromSession();
+
             // 검색어가 있다면 검색어 표시
             if (keyword) {
                 const header = document.createElement('h3');
@@ -239,9 +249,8 @@
                                         <button class="bookmark-btn" data-id="${p.partner_id}">⭐ 북마크 </button>
                                         <p><strong>내용:</strong> ${p.content.length > 50 ? p.content.slice(0, 50) + '...' : p.content}</p>
                                         <p><strong>범위:</strong> ${p.scope}</p>
-                                        <p><strong>카테고리:</strong> ${p.category_id || '없음'}</p>  
+                                        <p><strong>카테고리:</strong> ${benefitTypeMap_str[p.category_id] || '없음'}</p>  
                                         <p><strong>기간:</strong> ${formatDate(p.start_date)} ~ ${formatDate(p.end_date)}</p>
-                                        <button onclick='GoPartnerEditPage(${JSON.stringify(p).replace(/'/g, "\\'")})'>수정하기</button>
                         `;
                             partnerBox.appendChild(benefitDiv);
                         });
