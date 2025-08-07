@@ -100,10 +100,12 @@
 
                     const options = {
                         center: center,
-                        level: 4
+                        level: 5 // 초기 줌 레벨
                     };
 
                     map = new kakao.maps.Map(document.getElementById('map'), options);
+                    resetFilters();
+                    applyFilters(); // 초기 필터 적용
                     loadMarkers(); // 마커 로딩
                 });
         }

@@ -118,11 +118,12 @@ function applyFilters() {
     } else {
         GoSearch();     // 🔎 검색 페이지일 경우
     }
-    alert("적용된 조건:\n" + JSON.stringify({
-        scope: [...selectedScopes],
-        type_ids: [typeIds],
-        category: selectedCategory
-    }, null, 2));
+
+    // alert("적용된 조건:\n" + JSON.stringify({
+    //     scope: [...selectedScopes],
+    //     type_ids: [typeIds],
+    //     category: selectedCategory
+    // }, null, 2));
 
 }
 
