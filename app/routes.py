@@ -631,7 +631,6 @@ def get_benefit_types():
 
 @main.route('/search-results', methods=['POST'])
 def search_results():
-    import json
     keyword = request.form.get('keyword', '').strip()
     target = request.form.get('target')  # name or content
     scopes_str = request.form.get('scopes')
@@ -661,11 +660,20 @@ def search_results():
         WHERE 1=1
     """
     params = []
+    cur = mysql.connection.cursor()
 
     if scopes:
         placeholders = ', '.join(['%s'] * len(scopes))
         query += f" AND p.scope IN ({placeholders})"
         params.extend(scopes)
+    else:
+        user_id = session.get('user_id')
+        cur.execute("SELECT * FROM users WHERE user_id = %s", (user_id,))
+        user = cur.fetchone()
+    
+        if user:
+            query += " AND p.scope LIKE %s"
+            params.append(user['univ'] + '%')
 
     if category and category != 'null':
         query += " AND bc.name = %s"
@@ -692,7 +700,6 @@ def search_results():
     print("🔍 최종 쿼리:", query)
     print("🔍 파라미터:", params)
     
-    cur = mysql.connection.cursor()
     cur.execute(query, params)
     results = cur.fetchall()
     cur.close()
