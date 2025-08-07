@@ -43,8 +43,11 @@ def signup():
         cur.execute("INSERT INTO users (loginID, password) VALUES (%s, %s)",
                     (loginID, password))
         mysql.connection.commit()
+        cur.execute("SELECT * FROM Users WHERE loginID = %s AND password = %s", (loginID, password))
+        user = cur.fetchone()
         cur.close()
         #url_for인자넣을때 -대신 함수명인 _로 넣어야됨!
+        session['user_id'] = user['user_id']  # 회원가입 후 로그인 상태 저장
         return redirect(url_for('main.signup_profile', loginID=loginID))  # loginID 전달해도 되고 안 해도 됨
     return render_template('signup.html')
 
@@ -59,15 +62,19 @@ def check_id():
 
 @main.route('/signup-profile', methods=['GET','POST'])
 def signup_profile():
+    userId= session['user_id']
+    
     if request.method == "POST":
         nickname = request.form['nickname']
         univ = request.form['univ']
-        campus = request.form['campus']
+        college = request.form['college']
         major = request.form['major']
 
         cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO users (nickname, univ, campus, major) VALUES (%s, %s, %s, %s)",
-                    (nickname, univ, campus, major))
+        cur.execute("UPDATE users SET nickname=%s, univ=%s, college=%s, major=%s WHERE user_id = %s",
+            (nickname, univ, college, major, userId)
+        )
+
         mysql.connection.commit()
         cur.close()
 

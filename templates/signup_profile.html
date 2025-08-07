@@ -5,7 +5,8 @@
     <meta charset="UTF-8" />
     <title>회원가입 성공</title>
     <style>
-
+        .error { color: red; font-size: 0.9em; }
+        .success { color: green; font-size: 0.9em; }
     </style>
 </head>
 
@@ -17,12 +18,12 @@
         <br><span id="nicknameMessage" class="error"></span><br>
 
         <label>대학교:
-            <select name="univ" id="univ" onchange="updateCollegeOptions()" required>
+            <select name="univ" id="univ" onchange="onUnivChange()" required>
                 <option value="">대학교 선택</option>
             </select>
         </label><br>
         <label>단과대학:
-            <select name="college" id="college" onchange="updateMajorOptions()" required>
+            <select name="college" id="college" onchange="onCollegeChange()" required>
                 <option value="">단과대학 선택</option>
             </select>
         </label><br>
@@ -41,11 +42,11 @@
             // 대학교 목록 불러오기
             loadUnivList("univ");
         });
-        function updateCollegeOptions() {
+        function onUnivChange() {
             updateCollegeOptions("univ", "college");
         }
 
-        function updateMajorOptions() {
+        function onCollegeChange() {
             updateMajorOptions("univ", "college", "major");
         }
 
