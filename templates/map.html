@@ -122,7 +122,7 @@
             const category = safeGet('selectedCategory');
             const typeIds = JSON.parse(safeGet('selectedTypeIds') || '[]');
             const scopes = JSON.parse(safeGet('selectedScopes') || '[]');
-            const target = safeGet('target') || 'all';
+            const target = safeGet('target') || 'all'; //사실상 늘 all이긴해..ㅎㅎ target 설정하는 option element없어서
 
             // 🔥 URL 파라미터로 넘김
             const url = new URL('/map/benefits', window.location.origin);
@@ -153,6 +153,7 @@
         function searchOnMap() {
             const keyword = document.getElementById('mapSearchInput').value.trim();
             sessionStorage.setItem('searchWord', keyword);
+            Object.values(window.detailOverlayMap).forEach(o => o.setMap(null));
             loadMarkers(keyword);
         }
 
