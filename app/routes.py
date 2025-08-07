@@ -520,9 +520,13 @@ def fetch_partners_by_scope():
     cur.close()
     return jsonify({'error': '접근 권한 없음'}), 403
 
-@main.route('/benefit/edit/form')
+@main.route('/benefit/edit/form', methods=['GET'])
 def benefit_edit_form():
-    return render_template('benefit_edit_form.html')
+    
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT * FROM BenefitTypes")
+    benefit_types = cur.fetchall()
+    return render_template('benefit_edit_form.html',benefit_types=benefit_types)
 
 @main.route('/benefit/update', methods=['POST', 'DELETE'])
 def update_benefit():

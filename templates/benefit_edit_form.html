@@ -32,9 +32,9 @@
         <input type="radio" name="category" value=9 id="cat9"> 주거
         <br><br>
 
+        <label>혜택 형태:</label><br>
         {% for btype in benefit_types %}
-        <input type="checkbox" name="type_ids" value="{{ btype.type_id }}" data-name="{{ btype.name }}"> {{ btype.name
-        }}
+        <input type="checkbox" name="type_ids" value="{{ btype.type_id }}" data-name="{{ btype.name }}"> {{ btype.name}}
         {% endfor %}
 
         <label>위치 주소:</label><br>
