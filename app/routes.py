@@ -698,58 +698,70 @@ def map_show():
 
 @main.route('/map/benefits')
 def map_benefits():
+    print("📦 받은 파라미터:", request.args)
+    keyword = request.args.get('keyword', '').strip()
+    scopes_str = request.args.get('scopes')
+    category = request.args.get('category')
+    type_ids_str = request.args.get('type_ids')   
+        
     try:
-        cur = mysql.connection.cursor()
+        scopes = json.loads(scopes_str) if scopes_str else []
+    except:
+        scopes = []
 
-        query = """
-            SELECT 
-                p.partner_id,
-                p.name,
-                p.content,
-                p.scope,
-                p.latitude,
-                p.longitude,
-                p.category_id,
-                bc.name AS category_name,
-                GROUP_CONCAT(bt.type_id) AS benefit_type_ids
-            FROM partners p
-            LEFT JOIN BenefitCategories bc ON p.category_id = bc.category_id
-            LEFT JOIN PartnerBenefitTypes pbt ON p.partner_id = pbt.partner_id
-            LEFT JOIN BenefitTypes bt ON pbt.type_id = bt.type_id
-            WHERE p.latitude IS NOT NULL AND p.longitude IS NOT NULL
-            GROUP BY p.partner_id
-        """
+    try:
+        type_ids = [int(tid) for tid in type_ids_str.split(',') if tid.isdigit()] if type_ids_str else []
+    except:
+        type_ids = []
+    cur = mysql.connection.cursor()
 
-        cur.execute(query)
-        colnames = [desc[0] for desc in cur.description]
-        rows = cur.fetchall()
-        # for row in rows:
-        #     print("🔥 raw row:", row)
-        cur.close()
+    query = """
+    SELECT 
+        p.partner_id, p.name, p.content, p.scope,
+        p.latitude, p.longitude,
+        p.category_id, bc.name AS category_name,
+        GROUP_CONCAT(bt.type_id) AS benefit_type_ids
+    FROM partners p
+    LEFT JOIN BenefitCategories bc ON p.category_id = bc.category_id
+    LEFT JOIN PartnerBenefitTypes pbt ON p.partner_id = pbt.partner_id
+    LEFT JOIN BenefitTypes bt ON pbt.type_id = bt.type_id
+    WHERE p.latitude IS NOT NULL AND p.longitude IS NOT NULL
+    """
+    params = []
 
-        # 튜플 → dict 변환
-        results = []
-        for r in rows:
-            raw_ids = r.get('benefit_type_ids', '')
-            if raw_ids and raw_ids != 'benefit_type_ids':
-                try:
-                    r['benefit_type_ids'] = list(map(int, raw_ids.split(',')))
-                except Exception as parse_err:
-                    print("❌ benefit_type_ids 파싱 실패:", raw_ids)
-                    r['benefit_type_ids'] = []
-            else:
-                r['benefit_type_ids'] = []
+    if scopes:
+        query += f" AND (" + " OR ".join(["p.scope LIKE %s"] * len(scopes)) + ")"
+        params.extend([f"%{s}%" for s in scopes])
 
-            r['lat'] = r.pop('latitude', None)
-            r['lng'] = r.pop('longitude', None)
+    if category and category != 'null':
+        query += " AND p.category_id = %s"
+        params.append(int(category))
+
+    if type_ids:
+        placeholders = ','.join(['%s'] * len(type_ids))
+        params.extend(type_ids)
+
+    if keyword:
+        query += " AND (p.name LIKE %s OR p.content LIKE %s)"
+        params.extend([f"%{keyword}%", f"%{keyword}%"])
+
+    query += " GROUP BY p.partner_id"
+
+    cur = mysql.connection.cursor()
+    cur.execute(query, params)
+    rows = cur.fetchall()
+    cur.close()
     
-            results.append(r)
-        print("🔍 /map/benefits 쿼리 결과:", results)
-        return jsonify(results)
+    results = []
+    for r in rows:
+        raw = dict(r)
+        raw_ids = raw.get('benefit_type_ids', '')
+        raw['benefit_type_ids'] = list(map(int, raw_ids.split(','))) if raw_ids else []
+        raw['lat'] = raw.pop('latitude', None)
+        raw['lng'] = raw.pop('longitude', None)
+        results.append(raw)
 
-    except Exception as e:
-        print("❌ /map/benefits 라우트 에러:", e)
-        return jsonify({'error': '서버 오류 발생'}), 500
+    return jsonify(results)   
 
 
 @main.route('/map/init-location')
