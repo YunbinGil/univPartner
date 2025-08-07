@@ -4,6 +4,7 @@ import os
 import requests #외부 api요청보내기 용, flask의 request는 사용자가 보낸 요청 받기용임
 from datetime import datetime
 from werkzeug.utils import secure_filename
+import json
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), '../uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
@@ -730,15 +731,21 @@ def map_benefits():
     params = []
 
     if scopes:
-        query += f" AND (" + " OR ".join(["p.scope LIKE %s"] * len(scopes)) + ")"
-        params.extend([f"%{s}%" for s in scopes])
-
+        placeholders = ', '.join(['%s'] * len(scopes))
+        query += f" AND p.scope IN ({placeholders})"
+        params.extend(scopes)
+        
     if category and category != 'null':
-        query += " AND p.category_id = %s"
-        params.append(int(category))
+        query += " AND bc.name = %s"
+        params.append(category)
 
     if type_ids:
-        placeholders = ','.join(['%s'] * len(type_ids))
+        placeholders = ', '.join(['%s'] * len(type_ids))
+        query += f""" AND p.partner_id IN (
+            SELECT partner_id 
+            FROM PartnerBenefitTypes 
+            WHERE type_id IN ({placeholders})
+        )"""
         params.extend(type_ids)
 
     if keyword:
