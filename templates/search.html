@@ -251,6 +251,7 @@
                                         <p><strong>범위:</strong> ${p.scope}</p>
                                         <p><strong>카테고리:</strong> ${benefitTypeMap_str[p.category_id] || '없음'}</p>  
                                         <p><strong>기간:</strong> ${formatDate(p.start_date)} ~ ${formatDate(p.end_date)}</p>
+                                        <p><button onclick='GoBenefitDetailPage(${JSON.stringify(p).replace(/'/g, "\\'")})'>상세보기</button></p>
                         `;
                             partnerBox.appendChild(benefitDiv);
                         });

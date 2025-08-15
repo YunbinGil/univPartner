@@ -3,8 +3,24 @@
 <head>
     <meta charset="UTF-8" />
     <title>최근 본</title>
+    <script src="{{ url_for('static', filename='js/format.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/recent.js') }}"></script>
 </head>
 <body>
+    <button onclick="history.back()">뒤로가기</button>
     <h1>최근 본 혜택 표시</h1>
+      <button type="button" onclick="clearRecentBenefits()">비우기</button>
+      <div id="benefitBox" style="display:grid;">
+   <div id="partnerBox" style="display:flex; flex-direction:column; gap:1rem;">
+     <br>
+   </div>
+ </div>
+    </section>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function(){
+        renderRecentBenefits('partnerBox', 5);   // ✅ 최신 5개만
+    });
+    </script>
 </body>
 </html>

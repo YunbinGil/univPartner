@@ -222,3 +222,15 @@ function restoreFiltersFromSession() {
         });
 }
 
+function GoBenefitDetailPage(benefit) {
+    const url = `/benefit/${benefit.partner_id}`;
+    const params = new URLSearchParams();
+
+    if (benefit.scope) params.append('scope', benefit.scope);
+    if (benefit.type_ids) params.append('type_ids', benefit.type_ids.join(','));
+    if (benefit.category) params.append('category', benefit.category);
+
+    const qs = params.toString();
+    window.location.href = qs ? `${url}?${qs}` : url;
+}
+

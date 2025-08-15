@@ -224,6 +224,7 @@
                 <button onclick="closeDetailOverlay(${p.partner_id})">✖</button>
                 <div><strong>${p.name}</strong></div>
                 <div>${p.content || '내용 없음'}</div>
+                <button onclick="GoBenefitDetailPage(${JSON.stringify(p).replace(/'/g, "\\'")})">상세보기</button>
                 <div style="font-size: 12px; color: gray;">${p.scope}</div>
             </div>
         `;

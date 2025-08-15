@@ -1022,4 +1022,23 @@ def editor_apply():
 def recent():
     return render_template('recent.html')
 
+@main.route('/benefit/<int:partner_id>', methods=['GET'])
+def benefit_detail(partner_id):
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        SELECT p.*, bc.name AS category_name,
+               GROUP_CONCAT(bt.name SEPARATOR ', ') AS benefit_types
+        FROM partners p
+        LEFT JOIN BenefitCategories bc ON p.category_id = bc.category_id
+        LEFT JOIN PartnerBenefitTypes pbt ON p.partner_id = pbt.partner_id
+        LEFT JOIN BenefitTypes bt ON pbt.type_id = bt.type_id
+        WHERE p.partner_id = %s
+        GROUP BY p.partner_id
+    """, (partner_id,))
+    partner = cur.fetchone()
+    cur.close()
 
+    if not partner:
+        return "❌ 혜택 정보가 없습니다.", 404
+
+    return render_template('benefit_detail.html', partner=partner)

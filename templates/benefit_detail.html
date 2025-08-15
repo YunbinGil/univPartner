@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>상세 정보</title>
+    <script src="{{ url_for('static', filename='js/recent.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/format.js') }}"></script>
+</head>
+<body>
+    <button onclick="history.back()">뒤로가기</button>
+        <div id="partnerBox" style="display: flex; flex-direction: column; gap: 1rem;">
+            <br>
+        </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const partner = {{ partner | tojson }};
+            saveRecentBenefit(partner);   // ✅ 상세 페이지 방문 시 '최근 본 혜택'에 기록
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+        const div = document.createElement('div');
+        const p = {{ partner|tojson }};
+        div.className = 'partner-entry';
+        div.style.border = '1px solid #ccc';
+        div.style.padding = '10px';
+
+        div.innerHTML = `
+        <h4>${p.name}</h4>
+        <p><strong>내용:</strong> ${p.content.length > 50 ? p.content.slice(0, 50) + '...' : p.content}</p>
+        <p><strong>범위:</strong> ${p.scope}</p>
+        <p><strong>카테고리:</strong> ${p.category_name || '없음'}</p>
+        <p><strong>혜택 형태:</strong> ${p.benefit_types || '없음'}</p>
+        <p><strong>기간:</strong> ${formatDate(p.start_date)} ~ ${formatDate(p.end_date)}</p>
+        <p><strong>주소:</strong> ${p.address || '없음'}</p>
+        `;
+        partnerBox.appendChild(div);  
+      });
+    </script>
+
+    
+</body>
+</html>
